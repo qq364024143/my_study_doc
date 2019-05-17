@@ -1,0 +1,2816 @@
+1.java基础 十章内容（从第三章面向对象开始（封装、继承、多态、抽象））	
+	
+	JVM五个区域：Java虚拟机栈、本地方法栈、堆区、方法区（包含常量池）、程序计数器
+			虚拟机栈：变量名、基本类型、局部变量，线程（每个线程都有独立的栈）
+			堆区：对象实例、数组（数组也是引用类型），GC主要区域
+			方法区：所有类级别数据将被存储在这里，包括静态变量。每个JVM只有一个方法区，它是一个共享的资源被所有线程共享。（类、方法、静态变量、静态方法、成员方法、常量：static final）
+			本地方法栈：Java融合其他语言代码，与硬件有关的应用，比如通过Java程序驱动打印机，或者Java系统管理生产设备
+			程序计数器：记录程序代码执行到哪里 ，下一个代码（指令）从哪里开始执行
+		
+	垃圾回收机制GC：GC分为两部分，新生代、年老代，分代分配，分代回收。
+			年轻代（Minor GC）：将内存分为两部分，一部分是未使用的，一部分是给新new出来的对象的，在进行回收时使用“停止复制算法”将存活的对象复制到未使用的内存中，并将第一部分的内存清空，将进行多次（次数可以设置，默认15次）回收后仍存活的对象复制到年老代
+					停止复制法，总有一部分内存是空的。经过一次GC和复制，一个Survivor中保存着当前还活着的对象，而Eden区和另一个Survivor区的内容都不再需要了，可以直接清空，到下一次GC时，两个Survivor的角色再互换
+			年老代（Full GC）:	老年代存储的对象比年轻代多得多，而且不乏大对象，每次只回收少量对象，一般采用“标记整理算法”，标记处存活的对象，将所有存活的对象向一端移动，以保证内存的连续，然后清理掉以外的内存。			
+	
+	第一章：Java基础语法
+		1.面试题：		
+		int a = 1;//正确，右边的值为整型时，默认为int型。long a = 1L;//长整型
+		float a = 1.0;//错误，右边的值为小数时，默认为double型。默认都是精度高的。float f = 1.0f;//正确
+		
+		2.面试题
+		int a = 1;	
+		float b = 2.0;
+		a +=b;不会报错，+=具有强转型的功能。 而a = a+b;是错误的（编译就不通过了） int型变量无法接收float型的值。
+		
+		&&和||具有短路功能：
+			1>2&&1<2：前面条件不成立时不会再执行后面的条件，直接返回false
+			2>1||1>3：前面条件成立时不再执行后面的条件，直接返回true
+		
+		&和|：
+			当前后为Boolean值时是“与”和“或”，且没有短路功能；
+			当不是Boolean值时是“按位与”和“按位或”
+		
+		String str = obj==null?"":obj;  //三元运算符。
+			恒等于
+			String str = null;
+			if(obj==null){
+				str = "";
+			}else{
+				str = obj;
+			}
+		
+		<<：化为二进制左移多少位
+		>>：化为二进制右移多少位
+		
+		2^3：异或，按位相异的为1，相同为0；   010^011   ==001
+
+		计算n的m次方使用Math.pow(n,m)方法
+			2的3次方最快捷的方法是使用位移：2<<3
+				2转二进制为00000001，左移3位为00001000转为十进制为1*2的3次方+0*2的2次方 +0*2的1次方+0*2的0次方=8
+		
+		2*10的5次方为    2*e5
+		低精度可以 自动向高精度转型，但是高精度不能向 低精度转（除非强转），因为高精度像低精度转会损失精度导致 数据不正确
+	局部变量在执行完局部变量所在的代码块｛｝后就被销毁
+
+	二叉树（tree）：左子节点小于父节点，右子节点大于父节点。便于加快查询速度。比顺序查询快，前提是二叉树尽量分散开(平衡二叉树)，如果二叉树都在根节点一侧则与顺序查询无异
+		二叉树用在数据库建立索引上加快查询。二叉树一个节点只存储一个数据，但数据量过大时，树的高度增加，查找效率也是变低。（每读一个节点则需要一次IO）
+		
+		二叉树节点存储的数据内容太少。没有很好利用操作系统和磁盘数据交换特性，也没有利用好磁盘IO的预读能力。因为操作系统和磁盘之间一次数据交换是已页为单位的，
+		一页 = 4K，即每次IO操作系统会将4K数据加载进内存。但是，在二叉树每个节点的结构只保存一个关键字，一个数据区，两个子节点的引用，并不能够填满4K的内容。幸幸苦苦做了一次的IO操作，却只加载了一个关键字，在树的高度很高，恰好又搜索的关键字位于叶子节点或者支节点的时候，取一个关键字要做很多次的IO。
+
+	多路平衡查找树（BTree：balance tree）：多路，即一个父节点下有多个子节点。如3路则一个父节点下有3个子节点。
+		1、每个节点存储元素个数：有m个子节点则每个节点包含有m-1个元素
+		2、根节点和分支节点中不保存数据，只用于索引，所有数据都保存在叶子节点中。
+		3、节点中元素分布规则：左子节点存储的元素小于父节点最小的元素，中子节点则存储的元素>父节点最小元素<父节点最大元素，右子节点则>父节点最大元素
+			如 有23456789这8个元素，父节点元素为   4、7   则左子节点存储的是2、3；中子节点存储的是5、6；右子节点存储的是8、9
+				4、7
+			2、3	5、6	8、9
+		
+	B+Tree：
+		1、B+TREE 关键字的搜索采用的是左闭合区间（<=），之所以采用左闭合区间是因为他要最好的去支持自增id，这也是mysql的设计初衷。
+		2、B+TREE 根节点和支节点没有数据区，关键字对应的数据只保存在叶子节点中。即只有叶子节点中的关键字数据区才会保存真正的数据内容或者是内容的地址。而在B树种，如果根节点命中，则会直接返回数据。并且在B+TREE中，叶子节点不会去保存子节点的引用。
+		3、B+TREE叶子节点(最底层的节点，相当于数的叶子)是顺序排列的（以便条件查找如<=或>=），并且相邻的节点具有顺序引用的关系
+			如 有123456789这8个元素，父节点元素为   4、7   则左子节点存储的是2、3；中子节点存储的是5、6；右子节点存储的是8、9
+					1、4、7	===>父节点，不保存数据
+			         1、2、3——>4、5、6——>7、8、9     ===>叶子节点有顺序排列，并且相邻的节点具有顺序引用的关系。查找数据时最终在叶子节点中命中数据，根据叶子节点中节点的数据区取得真正的数据。
+		
+		4、每个节点存储元素个数：有m个子节点则每个节点包含有m个元素，且是左闭环(<=)
+		
+	每个节点占一页，每读取一个节点进行一次IO，因为操作系统和磁盘之间一次数据交换是已页为单位的
+
+	数据库不加索引的情况下是顺序查询（全表扫描），有了索引，我们就可以快速的通过索引找到101所对应的行记录在磁盘中的地址，再根据给定的地址取出对应的行数据。
+	索引与表是分开的，索引存储的只是表中数据所在磁盘中的地址，索引以一种算法将这些地址存储以便加快查找，当在索引中找到数据对应的地址后再根据地址去查找磁盘的数据。	
+	
+	数据库索引：索引在MySQL中也叫做“键”，是存储引擎用于快速找到记录的一种数据结构，索引就是数据结构。
+
+	先查找索引，再通过索引查到的数据地址去查磁盘中的数据。
+		对于索引中的关键字进行对比的时候，一定是从左往右以此对比，且不可跳过。当进行匹配的时候，会把字符串转换成ascll码，如abc变成97 98 99，然后从左往右一个字符一个字符进行对比。所以在sql查询中使用like %a 时候索引会失效，因为%表示全匹配，如果已经全匹配就不需要索引，还不如直接全表扫描。	
+
+	第二章：逻辑语法、数组、关键字、垃圾回收、变量内存分析、
+		Java的反射机制（Java自带的Class类：每个类其实也是属于Class类的 如Test.class）
+		Class clazz = Class.forName("类的全路径")
+
+		
+	
+	第三章：面向对象OO    OOP：面向对象编程
+		基本特征：
+		封装：将数据封装在一个对象(实体类)中
+		继承：一个类继承另一个类（单继承、多实现）
+		多态：父类的引用指向子类的实例，如：一个人（对象）属于人类、也属于动物类。一种包含关系
+		抽象：任何事物都可以抽象成一个类
+	
+		反射、内省(introspect)、泛型:
+			反射：Class类，Class clazz = Class.forName("类全路径");//或者 obj.getClass();//或者MyClass.class;
+			泛型：T/?/E，定义时泛指，使用时确定类型
+				public class<T>{}
+				
+				public static <T> T getData(){return "";}//返回是什么类型就是什么类型。
+			
+		面向对象的优点：
+		1、易维护
+			采用面向对象思想设计的结构，可读性高，由于继承的存在，即使改变需求，那么维护也只是在局部模块，所以维护起来是非常方便和较低成本的。
+		2、质量高
+			在设计时，可重用现有的，在以前的项目的领域中已被测试过的类使系统满足业务需求并具有较高的质量。
+		3、效率高
+			在软件开发时，根据设计的需要对现实世界的事物进行抽象，产生类。使用这样的方法解决问题，接近于日常生活和自然的思考方式，势必提高软件开发的效率和质量。
+		4、易扩展：在原有的基础上进行扩展
+			由于继承、封装、多态的特性，自然设计出高内聚、低耦合的系统结构，使得系统更灵活、更容易扩展，而且成本较低。
+		
+		5.ClassLoader：类加载器
+			
+		基本类型与引用类型（对象）的区别：
+			1.基本类型存在栈区，引用类型存在堆区
+			2.在作为方法的实参时，局部基本类型不能传递到其他方法中进行修改，因为基本类型作为实参传递到方法中，方法会重新创建一个基本类型副本来操作，而不是操作原来的基本类型变量。而局部引用类型可
+			传递到其他方法中进行修改
+				
+		
+		
+	第四章：异常（Exception）
+		继承Exception类，通过构造函数调用父类的构造将已成信息传递过去
+		try{}catch(Exception e){}finally{}
+		try{}必须接catch(Exception e){},可以不接finally{}
+		
+		throws：在方法上抛出异常
+		throw：在代码块里抛出一个异常对象
+		
+		public void test()throws Exception{...}
+
+		public void test()throws Exception{
+			try{
+				...
+			}catch(Exception e){
+				throw e;
+			}
+		}
+		
+	第五章：lang包下的包装类
+		short:Short(2字节)
+		int:Integer（4字节）
+		long:Long（8字节）
+		float:Float（4字节）
+		double:Double（8字节）
+		byte:Byte（1字节）
+		char:Character（不同编码字节数不同，一般：一个英文字符1个字节，一个汉字2字节）
+		boolean:Boolean	（1bit,一位：1/8个字节）
+		
+		StringBuffer（线程安全）、StringBuilder（线程不安全）：String的操作类，内容可变
+		String：内容不可变
+
+		使用lang包中类时不需要import的，因为默认是导入的		
+
+
+	第六章：util下的集合（Collection）
+		Collection:
+			List(有序可重复):ArrayList（Object[]）、LinkedList(链表结构，插入删除快速)、Vector（Object[]，线程安全）
+			Set（无序不重复，重复的添加会覆盖原来的值，且size不变）:HashSet、TreeSet
+		Map(键值对key-value):
+			HashMap:线程不安全,键可以为null，key重复会覆盖原来的value,每次put时都会判断是否key已有相同的存在，存在则将新 value覆盖旧value
+			HashTable:线程安全，键不能为null
+			TreeMap:用于排序，效率高
+			HashMap的主干是一个Entry数组。Entry是HashMap的基本组成单元，每一个Entry包含一个key-value键值对。
+			简单来说，HashMap由数组+链表组成的，数组是HashMap的主体，链表则是主要为了解决哈希冲突而存在的，如果定位到的数组位置不含链表（当前entry的next指向null）,
+			那么对于查找，添加等操作很快，仅需一次寻址即可；如果定位到的数组包含链表，对于添加操作，其时间复杂度为O(n)，首先遍历链表，存在即覆盖，否则新增；
+			对于查找操作来讲，仍需遍历链表，然后通过key对象的equals方法逐一比对查找。所以，性能考虑，HashMap中的链表出现越少，性能才会越好。
+			当key的hash值相同时则需要链表了
+
+			HashMap：
+				由Entry<K,V>[] table = new Entry<K,V>[最大值];组成
+				Entry<K,V>类有K,V,next属性，next指向下一个Entry元素
+				1.put的时候判断table是否为空，是空则初始化table.再查询key是否存在，存在则覆盖原来的value
+				2.扩容机制，当元素个数达到阈值后对table进行扩容。
+			
+		Collections：操作集合的工具类
+			sort()：排序
+			copy():复制
+
+		Comparator接口：集合排序规则，重写compareTo方法
+		Comparable类：集合排序规则，重写compareTo方法
+		
+		像collection中为的集合默认是Object类型的时候，不能指定泛型为基本类型，如Map<char,int>是错误的，需要包装成Map<Character,Integer>
+
+		还有一些工具类：
+		Calendar:日历
+		DateFormat:日期格式化，注意yyyy与YYYY的区别。最好不要使用YYYY,YYYY获取的是date所在周的最后一天所在的年份
+		Properties：.properties配置文件的读取
+		Date:日期对象
+		Pattern：正则表达式 ^[a-zA-Z]/w{5,10}$  ：以字母开头，后面根5到10为任意字符 开头符号：^  ；结尾符号：$
+		UUID：
+
+		并发容器包：java.util.cocurrent
+
+			Map：ConcurrentHashMap
+			List：CopyOnWriteArrayList
+			Set：CopyOnWriteArraySet
+		
+		CopyOnWriteArrayList提供高效地读取操作，使用在读多写少的场景。CopyOnWriteArrayList读取操作不用加锁，且是安全的；写操作时，先copy一份原有数据数组，再对复制数据进行写入操作，最后将复制数据替换原有数据，从而保证写操作不影响读操作。相当于读写分离
+		
+		list.remove();会报错，因为原来的迭代器长度被改变与现在的不等而.next()方法中会验证。 iterator.remove()不会报错，因为remove时将原来的长度改为了现在的长度，还是相等，next（)方法验证通过
+
+	第七章：IO（流）
+		InputStream/OutputStream
+		Reader/Writer
+		BufferedReader/BufferedWriter
+		InputStreamReader/OutputStreamWriter 把输入的字节转为字符输入/把输出的字符转为字节输出
+		ObjectInputStream/ObjectOutputStream
+		ByteArrayInputStream/ByteArrayOutputStream：字节数组读取流，读取byte[]到流里面和输出byte[]到ByteArrayOutputStream流里面
+		DataInputStream/DataOutputStream
+		FileInputStream/FileOutputStream
+		File
+
+		Serializable接口：可序列化的，需要序列化时都要实现此接口
+		注意IO流关闭顺序，关闭顺序错误将会报错，IO is close。
+		正确关闭顺序：嵌套IO流
+			按IO流的输入/输出走向进行关闭，先经过的先关闭
+			注意输出 流需要先flush()后再进行关闭 
+
+		IO流提前关闭会导致导出的文件打不开，文件提前结束
+		
+		IO流读取文件时是一次读取一部分而不是把整个文件加载到内存：好比输出流也是一点一点的写。
+			FileInputStream in  = new FileInputStream("");//这里只是打开IO连接文件的通道
+			InputStreamReader inreader = new InputStreamReader(in);
+			BufferedReader br  = new BufferedReader(inreader);//BufferedReader会一次性从物理流中读取8k(默认数值,可以设置)字节内容到内存作为缓冲
+			
+			String line  = null;
+			String result = "";
+			while((line=br.readLine())!=null){//readLine()方法才是开始读取文件中的数据，一次读取一行
+				result += line;
+			}
+
+			in.close();
+			inreader.close();
+			br.close();
+		
+	第八章：线程
+		1.继承Thread类，重写run()方法，调用start()方法创建线程并执行线程任务
+		2.实现Runnable接口，重写run()方法，调用start()方法创建线程并执行线程任务
+
+		3.实现Callable接口重写call()方法，通过FutureTask类包装，再通过Thread包装，调用start()方法创建线程并执行线程任务，通过FutureTask的get()方法获取线程返回值
+		
+
+		线程理解：创建一个Thread类对象就是一个线程任务，Thread的start方法会创建一个线程并执行线程任务（run方法）
+			第一种方式实现线程：
+				MyThread t = new MyThread();//创建一个线程任务，注意是一个任务，而不是执行线程
+				t.start();//创建线程并执行线程任务							
+
+		线程同步：synchronized关键字，锁的是对象，只有当synchronized修饰的方法被同一个对象调用时，这些线程才是同步的，否则无效。
+			public synchronized void method(){//修饰方法
+				......
+			} 
+
+			public static synchronized  void method2(){//修饰静态方法时，是全局锁，因为调用此方法使用的是类名去调，锁的是XXClass.class对象，而所有线程的XXClass.class对象都是同一个，所以所有线程都同步
+				......
+			}
+
+			public void method(){
+				synchronized(this){//修饰代码块，this代表当前引用对象，锁的也是对象
+					......
+				}
+			}
+
+			public void method(){
+				synchronized(this.getClass()){//全局锁
+					.....
+				}
+			}
+
+
+			volatile关键字：修饰成员变量，因为每个线程都会从线程本地内存中读写数据，而不是共享内存中读写，这样就导致线程访问同一对象的成员变量时数据不同步。
+					volatile的作用就是强制线程从共享内存中读写成员变量，所以访问的都是同一个数据
+
+		线程暂停：this.wait()处于等待状态，需要使用  this.notify()方法唤醒
+			Thread.sleep(1000ms);线程睡眠，到时间自动唤醒
+
+		线程锁：
+			乐观锁：
+				1.在数据库添加版本号字段，利用数据库的线程安全实现统一版本号的数据只被修改一次
+
+				2.在线程类中添加静态属性表示线程是否在执行状态
+
+				3.在减库存时的sql:这也是利用数据库的同步，因为数据库在执行多条sql时不会同时执行，而是一条一条执行（确保数据同步）
+				update t_goods set goods_nums=goods_nums-10 where goods_no='110' and goods_nums-10>=0
+	
+		停止线程的3种方式：
+			1.Thread.stop();
+			2.Thread.interrupt();
+			3通过标识使线程执行完成（在while循环时）
+
+
+		线程池：ThreadPool
+			Executors：获取线程池对象的工厂（工具）类，获取的线程池是单例模式。
+			ExecutorService：统一接收线程池对象的接口
+			线程池的原理：1.创建线程池，设置核心线程数、最大线程数
+				        2.第一次执行线程时才创建线程，但是执行完任务后不会销毁，会被回收，当线程任务多于最大线程数时，将多的线程放到任务队列中。
+				        3.当线程空闲时间大于某值时销毁线程
+				        4.当线程任务过多时，队列中放不下时会抛出异常。
+
+			线程池的作用：管理池中的线程，避免了线程的重复创建-销毁（因为线程池中的线程一直存在，有线程任务要执行时只需拿来用即可），提高效率。
+					当不使用线程池时，每有一个线程任务要执行都需要创建一个线程去执行，任务执行完后再把线程销毁。		
+			
+			例：
+			ExecutorService threadPool = Executors.newFixedThreadPool(10);//创建线程池，线程数量为10个
+			MyThread t = new MyThread();//线程任务
+			threadPool.execute(t);//线程池执行线程任务，有线程空闲时执行，没有线程空闲时在队列中等待		
+		
+		LocalThread：当前线程，每个线程都会复制各自的一份localThread对象，互不影响。
+		
+		同步：事情一件一件的按顺序做，完全做完一件事后再去做另外 一件事（比如单线程)，如取完钱后立马扣除余额
+		异步：做一件事情的时候不会影响其他事情的执行，多条分支任务同时进行。（多线程）比如吃饭不影响看电视
+		
+		多线程：cpu在执行线程时是在线程中快速来回随机切换的，因为时间很快所以对人来说像同时进行，其实是有时间差的
+	
+	第九章：Socket、ServerSocket网络编程
+		服务端：开一个端口号0-65536
+			ServerSocket ss = new ServerSocket(18888);
+			Socket s = ss.accept();//接口连接,阻塞试的，只有当接收到连接才执行
+			通过s.getInputStream();s.getOutputStream();输入输出流进行通信
+		
+		客户端：服务端ip+端口号连接服务端
+			Socket s = new Socket("10.7.34.233",18888);
+			通过getInputStream();getOutputStream();获取输入输出流进行通信
+		
+		Socket、ServerSocket是TCP协议的（TCP（Transmission Control Protocol 传输控制协议）是一种面向连接的、可靠的、基于字节流的传输层通信协议）
+		
+		浏览器与tomcat其实就是Socket与ServerSocket写出来的
+		
+	第十章：GUI
+		界面常用组件：
+			JFrame、JPannel等
+		通过事件监听来操作（与js一样，基于事件的）
+
+	
+
+	自定义注解：
+		@Target(value=ElementType.TYPE)//元素类型; TYPE:此注解用于类上；METHOD：此注解用于方法上；FIELD：此注解用于属性上
+		@Retention(RetentionPolicy.RUNTIME)
+		public @interface MyAnnotation{
+			String name() default "";	
+		}
+		
+		使用注解：
+			@MyAnnotation(name="哈哈")
+			public class Test{
+			
+			}
+		
+		获取类、方法、属性上的注解是通过反射获取的
+		MyAnnotation ma = Test.class.getAnnotation(MyAnnotation.class);//获取指定的注解
+		Annotation[] ans = Test.class.getAnnotations();//获取类上所有注解
+		
+
+		spring、springmvc的<context:component-scan base-package="com.hgx"/>即指定扫描的包并扫描包下所有类的注解来创建bean
+	
+	枚举：把它看成一般的类即可
+		public enum MyEnum{
+			
+			//A1、A2、A3即是枚举对象,且必须定义在构造方法之前
+			A1("1","哈哈"),A2("2","嘿嘿"),A3("3","呵呵");
+					
+			private String key;
+			private String value;
+
+			public MyEnum(String key,String value){
+				this.key=key;
+				this.value = value;
+			}
+
+			public String getKey(){
+				return key;
+			}
+			public void setKey(String key){
+				this.key = key;
+			}
+			
+			public String getValue(){
+				return value;
+			}
+			public void setValue(String){
+				this.value = value;
+			}
+			
+			//通过key获取value,类似map。MyEnum.values()：获取此枚举的所有对象
+			public static String getValueByKey(String key){
+				for(MyEnum e:MyEnum.values()){
+					if(e.getKey().equals(key)){
+						return e.getValue();
+					}
+				}
+				return null;
+			}
+		}
+
+	
+		
+		了解掌握一些java的设计模式：单例模式、工厂模式、适配器模式、代理模式、MVC模式、前端控制器模式、拦截过滤器模式等
+	
+
+		正则表达式：
+		^：开始符号
+		$：结束符号
+		^\\d{1,5}-\\d{8}$，此正则表达式意思为以1到5个数字开头中间为-再以8个数字结束  XXXXX-XXXXXXXX
+		\w：任意字符
+		\d：数字
+		\S：字母
+		多一个\是反转义
+
+2.Java EE（web）
+	
+	Http协议：
+		1.POST请求携带的参数类型一般为3种：
+			即header的Content-type属性值：	
+				1.application/x-www-form-urlencoded  这是html的form表单提交的数据
+				2.multipart/form-data  form表单提交文件的数据
+				3.application/json  一般是ajax提交json数据的类型
+
+		2.GET请求没有Content-type属性的
+
+	一、HTML
+		超文本标记语言
+		定义页面元素   <input type="" name="" value=""/>
+		<base href="${pageContext.request.contextPath }/">  
+			base标签：代表了此页面上所有链接的基准路径（以base的href的值为基础路径）
+			${pageContext.request.contextPath}：EL表达式，获取此项目的路径 ：/projectName。 /代表http://localhost:8080
+			${pageContext.request.contextPath} === request.getContextPath();
+			pageConext是PageContext对象。当前页面有效
+			
+		如：
+			<img src="static/imgs/1.jpg"/>  实际上src的值为base的href加上src 等于 /projectName/static/imgs/1.jpg
+		
+			<iframe src=""/>用于引入其他页面，每个src或href都是请求后台服务
+		每个元素都有title属性，当鼠标放上去后显示的标题
+	二、css
+		层叠样式表(英文全称：Cascading Style Sheets)是一种用来表现HTML（标准通用标记语言的一个应用）或XML（标准通用标记语言的一个子集）等文件样式的计算机语言
+		css框架：bootstrap，引入bootstrap的样式css、js等，只需要在标签中定义class、id等属性。原理：bootstrap已经对不同的class写好了不同的样式
+
+	三、js(javascript)
+		基于事件、面向对象的一门语言，与Java无关，但是语法与Java非常相似
+		弱类型的语言：所有对象可以由var接收   var a = {};//对象
+		但是也可以分类：
+			字符串String、数字Number、布尔Boolean、数组Array、对象Object、Null、Undefined
+			var s = new String("sss");
+			var b = new Boolean(true);
+			var array = new Array();
+			var obj = new Object();
+			var obj = {};//也是创建对象
+			obj.name="哈哈";//给对象属性并赋值。
+			obj.age=18;
+
+		js的对象都是json格式:{"k1":"v1","k2","v2"}或[{"":""},{"":""}]
+
+			var age = obj.age;//获取对象的age属性值
+			
+			var array = [];//创建数组
+			array.push(obj);//像数组中添加元素（相当于list.add()）
+			
+		js的数学运算不同于java如：
+			Java的 int a = 2/3;//结果为0，int型舍去小数
+
+			js的 var a = 2/3;//结果0.666666
+			
+		js函数定义
+			function test(a,b,c){
+				alert(a+b+c);
+				return "哈哈";
+			}
+			
+		var methodName = function(a,b){...};这样也可以定义函数
+
+		
+		在js里面，只要看到{}括起来的就是js对象，[]就是js数组
+		
+		js函数中很多入参都是对象，如$.ajax({type:"post",url:"",data:{},dataType:"",success:function(){}});
+		function(){}也是对象，函数对象。
+		
+		正则表达式：
+			var regexp = /^[0-9]{6,10}$/;
+			if(regexp.test(str)){....}
+			或者：
+			var regexp = new RegExp("^[0-9]{6,10}$");
+			if(regexp.test(str)){....}
+			
+
+		js报错会导致页面卡住，按钮点击没反应等。
+
+		调用js函数不需要传入所有参数。
+
+		在js中也是万物皆对象
+		js是通过浏览器来执行的，有些js对象是浏览器中的对象，所以可能出现不同浏览器所使用的对象不同如使用ajax时:
+			老版本的ie浏览器使用：var obj = new ActiveXObject();而新版本的ie和其他浏览器使用：var xhr = new XMLHttpRequest();
+			再如：有些浏览器不支持WebSocket是因为它没有 var ws = new WebSocket("ws://localhost:8080/projectName/websocket2");//对象		
+		
+		html元素3种绑定事件的方法：
+		通过js绑定事件：function test(msg){alert(msg);}  绑定事件时传入事件对象  onclick="test(event)"  必须是 event 或者直接在函数里面使用event不需要传入  function(){   var target = event.target;}
+			document.getElementById("id").onclick=test;  而不是 document.getElementById("id").onclick=test("啊啊啊");//这样会执行test函数 ，因为js加载到哪里就会执行到哪里		
+			或document.getElementById("id").onclick=function(){test("哈哈");}，这样野可以绑定事件
+			总结：通过js给htmldom绑定事件格式为：dom.属性=函数对象test  。而不是调用函数test("啊啊啊");
+		
+		js中的this,也是表示当前引用的对象
+			js的this所代表的对象：
+				this代表当前对象：
+				var obj = {
+			   		a:'haha',
+			  		 func:function(){
+			      			 alert(this.a);//haha，this代表的是当前对象obj。把js对象当成Java的对象来看就容易理解了。a是obj的属性、func也是obj的（函数）属性，这个属性是一个函数对象
+                           				}
+				}
+
+		<img src="http://localhost:8080/project/img" ondbclick="changeBig(this)"/>绑定changeBig函数传的this代表的是img对象（元素===对象）
+		
+		有些js类是浏览器支持的，不同浏览器可能有不同的类，但是大多数情况下大多数类都是浏览器支持的
+		
+		setInterval(function(){},1000);
+		
+		事件冒泡：在一个对象上触发某类事件（比如单击onclick事件），如果此对象定义了此事件的处理程序，那么此事件就会调用这个处理程序，如果没有定义此事件处理程序或者事件返回true，那么这个事件会向这个对象的父级对象传播，从里到外，直至它被处理（父级对象所有同类事件都将被激活），或者它到达了对象层次的最顶层，即document对象（有些浏览器是window）。  
+		当事件可以触发多个元素事件时，js事件会先执行当前元素的事件，然后执行父类元素的事件
+		<div onclick="">
+			<input type="button" onclick=""/>
+		</div>
+		可以在事件函数结束后 return false;防止冒泡
+
+		注意：在body中动态追加<script>不能直接$("body").append("<script src='xxx.js'></script>");会把<script src='xxx.js'></script>当成是一个外部的js引入，因为<script src='xxx.js'></script>可以写在任何地方
+		需要使用$('body').append('<script'+'></'+'script>'); 
+
+	四、HTMLDOM
+		html页面的文档树，由标签元素组成，类似于Java的对象，每个标签都是一个标签对象
+		var xx = document.getElementById("xx");
+
+		Jquery对象与HTMLDom互转
+		var obj = document.getElementById("myid");//htmldom
+		$(obj);//转为Jquery对象
+		$(obj)[0]或者$(obj).get(0);//转为htmldom
+	
+	五、DTD、Schema
+		文档类型定义,用于约束XML的语言，相当于Java的接口约束实现类
+
+	六、XML
+		可扩展标记语言，用于对数据的格式化，类似json格式的数据，但是json格式是xml格式的一个优化
+		一般用在远程调用的数据传输（入参，出参）（WebService就是通过xml进行参数的传递的）
+		和配置文件
+
+		在xml中当使用<时，由于xml把<当成标签的开始，而不是我们想要的<（小于号）时（类似Java的转移字符，转移字符：有特殊意义的字符如\n换行）
+		我们可以使用<![CDATA[字符串]]>来转义特殊字符，使其变成一个纯字符串，如 a <![CDATA[<]]> b。实际上等于 a<b
+
+	
+	七、dom解析、SAX解析、dom4j解析
+		用于解析XML得到数据
+		
+		dom解析：效率低，需要先得到整个文档树
+			DocumentBuilderFactory f = DocumentBuilderFactory.newInstance();
+			DocumentBuilder b = f.newDocumentBuilder();
+			b.parse(new File(""));	
+
+		SAX解析：基于事件，只读，不写
+			SAXParserFactory f = SAXParserFactory.newInstance();
+			SAXParser sax = f.newSAXParser();
+			sax.parse(new File(""), new MyHandler());//第二个参数是解析的处理器	
+		
+		SAXReader：第三方xml解析器
+			SAXReader reader = new SAXReader();
+			reader.read(new File(""));
+	
+	八、ajax
+		异步的js and xml
+		原生的js：
+			var xhr = new XMLHttpRequest();
+		jquery：js框架
+			$.ajax({
+				type:"post",
+				url:"",
+				async:true,//是否异步
+				data:{},
+				dataType:"json",
+				success:function(data){
+					//dosomething
+				}
+			});
+
+		ajax：通过js发送请求到服务端，服务端响应回来时通过ajax的回调函数接收响应，在回调函数拿到数据后，通过操作htmldom来将数据填到页面
+
+		普通的请求时，服务端响应回来是浏览器直接接收响应并解析html
+		ajax跨域请求：jsonp
+			原理：通过js生成一个<script src="url" type="text/javascript"></script>请求其他服务器的url获取到本地js的函数名以及函数的参数，参数即跨域获取的数据。因为js加载后便会执行，所以当 <script src="url"></script>获取到后会执行本地js的函数并把参数传进来，便实现了ajax跨域
+				js：
+					function test(){
+						var script = document.createElement("SCRIPT");
+						script.src="http://pagead2.googlesyndication.com/pub-config/r20160913/ca-pub-3381531532877742.js";
+						document.body.appendChild(script);
+					}
+
+					function target(params){
+						alert(params);
+					}
+			
+		ajax异步与同步：
+			异步：相当于Java的多线程，即在执行ajax请求时可能会执行其他的函数（一般都是ajax后面的函数）
+			同步：不使用线程执行ajax请求，而是执行完ajax请求后再执行后面的函数
+	
+
+		
+		jQuery：js框架，对js进行了封装，类似jar包，它封装JavaScript常用的功能代码，提供一种简便的JavaScript设计模式，优化HTML文档操作、事件处理、动画设计和Ajax交互。
+			
+			jQuery对象与 js对象互转：
+			var a = document.getElementById("myid");//js对象
+			var b =  $(a);//js对转jQuery对象
+
+			var a = $("#id");//jQuery对象
+			var b = a[0];//jQuery对象转js对象方法1
+			var c = a.get(0);jQuery对象转js对象方法2
+
+			jquery选择器：
+				$("#id")
+				$(".class")
+				$("tagName")
+				$("#id li a[href='xxx']")：找到id为id的标签下的li标签下的a标签中属性为xxx的a标签，取子标签
+				$("#id,.class")：取并集，即id为id的标签和类为class的标签
+			
+		
+	九、jsp
+		java server page：Java服务页，实际上在执行过程还是一个servlet
+		
+		在第一个请求一个jsp时，服务端会把jsp中的内容翻译成为Java代码，并在tomcat的work文件夹下生成一个xx_jspServlet。再编译成.class执行
+		在jsp中<% java代码 %>的是Java代码，<%="xxx"%>是输出内容，还有el表达式，jstl标签库等都翻译成Java代码，而html标签则视为字符串，然后再通过输出流将字符串写到浏览器（客户端）
+		
+		jsp中el表达式、jstl标签库、jsp代码<%%>或<%=%>都是Java代码，而除了Java代码之外的都以字符串的形式输出到客户端。
+		在转发到jsp时，脑海中需要把jsp翻译成jsp_servlet.java
+		
+		最终*.jsp都会成为xxxjsp_servlet.Java。且jsp里面的代码变成Java代码
+
+		jsp有哪些内容?
+		
+			3大指令：
+				<%@ page %>：导类包
+				<%@ include %>：包含其他页面
+				<%@ taglib %>：导入标签库
+
+			3大组件：Servlet、Filter、Listener
+
+			4个作用域：
+				request：同一个请求有效
+				session：同一会话有效
+				application：从服务器开启到结束
+				pageContext：当前页面有效
+
+			7个动作：
+				<jsp:forward>：转发，request.getRequestDispatcher("index,jsp").forward(request,response);
+				<jsp:param>：携带参数
+				<jsp:include>：包含页面
+				<jsp:useBean>：创建对象
+				<jsp:setProperty>：设置对象属性值
+				<jsp:getProperty>：获取对象属性值
+				<jsp:plugin>：插件
+			
+			8个监听：
+				request2个
+				session4个
+				servletContext(application)2个
+
+			9个内置对象：
+				page:this(Object)
+				out:JspWriter
+				exception:Throwable
+				response:HttpServletResponse
+				config:ServletConfig
+				+
+				request:HttpServletRequest
+				session:HttpSession
+				application:ServletContext
+				pageContext:PageContext
+
+			EL表达式：
+				${}
+				${requestScope.key}//获取作用域的值
+				${key}//不指定作用域，由小到大查询
+
+				${param.name}//获取请求参数
+
+				${sessionScope.menu[0].name}
+				${requestScope.map.key}获取存在request中的map的key
+			JSTL标签库：
+				c标签：逻辑标签
+					<c:forEach var="d" items="${requestScope.data}">
+						${d.name}
+					</c:forEach>
+				fmt标签：格式化标签
+					<fmt:formatDate value="" pattern="yyyy-MM-dd HH:mm:ss"/>
+				
+				fn标签：函数，操作String，如substring()
+					<fn:>
+				xml标签：
+				sql标签：
+
+			自定义标签：extends TagSupport类，再配置tld文件
+			在java领域，表现层技术（页面模板）主要有三种：jsp、freemarker、velocity。其中jsp必须依赖web容器才能运行，因为jsp时依靠web容器将对应的jsp翻译成Java的XXJSP.java类再编译这个java类成.class字节码文件，最终运行代码
+			XXXJSPServlet是在jsp第一次被请求时才由web容器翻译、编译、运行的，之后web容器会一直使用这个jspServlet，直到web容器关闭（关闭后会清除work目录中jspServlet）。所以第一次请求jsp会觉得很慢。
+			而freemarker、velocity不需要有web容器支持，是一个独立模板，只需要导入相关jar包即可使用。
+	十、Servlet
+
+		自定义Servlet:
+			方法一：
+				1.写一个类继承HttpServlet类，重写doGet(HttpServletRequest req,HttpServletResponse resp)和doPost(参数)方法
+				2.在web.xml中配置：
+					<!--servlet定义-->
+					<servlet>
+						<servlet-name>myServlet</servlet-name>
+						<servlet-class>com.hgx.test.MyServlet</servlet-class>
+						<!--初始化参数可在servlet的init方法获取-->
+						<init-param>
+							<param-name>myparam</param-name>
+							<para-value>hahaah</param-value>
+						</init-param>
+					</servlet>
+
+					<!--servlet映射路径-->
+					<servlet-mapping>
+						<servlet-name>myServlet</servlet-name>
+						<url-pattern>/my/myServlet</url-pattern>
+					</servlet-mapping>
+
+			方法二：
+				1.写一个类继承HttpServlet类，重写doGet、doPost方法
+				2.在该类上使用注解@WebServlet(name="Hello",urlPatterns={"/hello.view"},loadOnStartup=1)代替配置
+
+		文件上传与下载：
+			上传：浏览器先从磁盘中读取文件到浏览器中（浏览器是个socket）,然后浏览器再通过流写到服务端（servlet）。
+			下载：服务端将文件流写到浏览器，然后用户再从浏览器中下载到电脑磁盘。
+			。。。。。
+			下载时注意将请求路径打开到空白页
+			<a href="img/downImg" target="_blank">下载</a>
+			这样就不会影响当前页面的操作。因为等待响应的页面在一个新的窗口。			
+			下载：设置响应的属性为下载,告知浏览器这是用于下载的。
+
+			文件下载完自动关闭空白页思路：
+				通过js提交隐藏的form
+				服务端添加cookie到response，服务端会在响应完成后将cookie写到浏览器，这就表示服务端响应完成（下载完成）
+				客户端通过js轮询获取此站点的cookie找到刚才的cookie则代表下载完成，然后通过window.close();关闭窗口
+
+			文件下载显示进度：
+				服务端把进度存至session（进度每变动一次更改一次session）
+				js（ajax）定时获取（请求）session中的进度，到页面显示。或者使用websocket长连接（全双工通信）服务器主动推送下载进度		
+		响应json数据：
+			User u = new User();
+			u.setName("haha");
+			u.setAge(18);
+			JSONObject obj = new JSONObject(u);
+			PrintWriter out = response.getWriter();
+			out.write(obj.toString());
+		
+		过滤器：实现Filter接口，重写doFilter方法
+			1.写一个过滤器类实现Filter接口，重写doFilter方法
+			2.在web.xml中配置：
+				<!--定义filter-->
+				<filter>
+					<filter-name>myFilter</filter-name>
+					<filter-class>com.hgx.MyFilter</filter-class>
+				</filter>
+				<!--过滤器映射路径-->
+				<filter-mapping>
+					<filter-name>myFilter</filter-name>
+					<url-pattern>/*</url-pattern>
+				</filter-mapping>
+
+
+		Session与cookie：
+			session是存在于服务端的，cookie是存在于浏览器的。
+			session是同一会话为同一个session，当前会话有效，浏览器每次请求都会把sessionid传到服务端，服务端通过sessionID获取session。
+			cookie是根据域名+path在每次请请求服务端时将路径下的cookie发送到服务端。
+
+		关于cookie允许js读取但是通过document.cookie得不到，因为js只会获取包含此页面的cookie。通过查看cookie的路径即可知道js能不能获取到cookie
+		Cookie cookie = new Cookie("name","value");
+		cookie.setPath("/"+(request.getRequestURI().split("/")[1]));//设置path为/projectName，保证所有jsp都能获取到此cookie。因为/projectName包含了所有jsp。cookie的路径表示js读取cookie的权限。
+		cookie的path的匹配类似interceptor（拦截器）的拦截路径，如/则项目下所有uri都拦截，cookie如设置path为/则请求同一域名下的所有服务都会携带此cookie，所以cookie是以域名为基础的。拦截器是以项目为基础的
+		服务端跨域设置cookie：
+			Cookie c = new Cookie(key,value);
+			c.setPath("");//设置路径，路径是设置应用的路径  如  某个项目下的某个uri  ：projectname/saveUser
+			c.setDomain("");//设置域名，域名就是 ip+端口号  如 localhost:8080
+			当写入跨域cookie时必须使用域名访问项目如：写入的cookie是127.0.0.1则不能使用localhost访问，不然获取不到cookie，因为访问时的域名与cookie的域名必须完全相等
+		拦截器/过滤器与servlet匹配路径的区别：
+			拦截器/过滤器是拦截以拦截路径为开头的所有请求  如拦截路径为 /a    则请求/a/b或/a/c  都会进入拦截器
+			而servlet则是先精准匹配，如果精准匹配不到才拦截，如servlet的拦截为/a   则一个/a/b的请求过来，先去找应用中是否有拦截/a/b的servlet，如果没有则进入/a的servlet，如果有则不会进入/a的servlet而是进入/a/b的servlet
+		
+	tomcat的3大组件：Servlet、Filter、Listener，都要继承或实现相应的类或接口且在web.xml中配置，tomcat编码默认为ISO-8859-1
+	
+	十一、WebSocket：使用websocket需要:tomcat8、浏览器支持websocket。
+		WebSocket与Servlet是同一种技术，但是不同类型。
+		WebSocket向HTTP一样，是一种协议，websocket是H5的新出的协议。
+		WebSocket是全双工通信：服务端可以主动向客户端发送数据。而不需要先由客户端发送请求，服务端做出响应。所以websocket是保持长连接的，除非主动断开
+		websocket是真正的长连接，不像ajax要定时发送请求到服务端。
+		要求：
+			1.浏览器支持WebSockt对象
+			2.服务端写对应的WebSocket的action，服务端的webSocket与Servlet一样，但是类型不同。Servlet接收HTTP请求，WebSocket接收WebSocket连接
+			
+		实例：
+			客户端：4个事件，2个方法
+				var s = new WebSocket("ws://localhost:8080/websocket/mywebsocket");
+				s.onopen=function(){
+					s.send("哈哈哈哈");//发送消息
+				}//连接成功后执行function
+				s.onmessage=function(evt){ alert(evt.data)}//接收到服务器数据时触发
+				s.onerror=function(){...}
+				s.onclose=function(){...}//关闭连接时执行
+				s.close();//关闭连接
+
+			服务端：2种方式：1.基于tomcat的WebSocket；2.基于springmvc
+			这里只用tomcat：与写servlet一样
+			@ServerEndpoint("/myWebScoket/{channel}")//发布一个websocket，url为/myWebSocket/*   @PathParam("channel")可以获取*的值注入到参数中，与@Pathvariable("channel")一样
+			public class MyWebSocket{
+				@OnMessage//事件指定触发后调用的方法
+				public void onMessage(String message,Session session)trows Exception{
+					.......
+				}
+				@OnOpen
+				public void onOpen(Session session,@PathParam("channel")String channel){...}
+				@OnClose
+				public void onClose(Session session, CloseReason closeReason){}
+				@OnError
+				public void onError(Session session, Throwable error){}
+			}
+		到这里WebSocket客户端与服务端都写完了。
+		注意websocket的请求协议是ws 如  ws://localhost:8080/websocket/mywebsocket/111        111代表渠道（channel）值
+
+		websocket虽然是长连接，但是如果长时间不通信（发送消息）则会自动断开。如果需要保持连接可以发送心跳连接（用window.setInterVal(function(){ws.send("");},10000)定时发送假消息）
+
+		客户端每个连接都是一个session（相当于连接通道），即每var ws = new WebSocket("ws://....");都会产生一个session		
+
+
+		tomcat工作原理：
+			1.启动tomcat会解析web.xml
+			2.web.xml的<context-param>会存到application（servletContext）对象中
+			3.<servlet>里面的<init-param>可以通过servlet的init方法的参数ServletConfig对象获取到
+			4.servlet默认是第一次请求时创建，且是单例模式。
+
+			http请求：必须先请求再响应。每次请求都会创建一个request对象，无状态协议。
+			websocket：客户端请求一次就能够保持连接状态，这样服务端随时都可以找到对应的session并推送消息到客户端。
+
+			对于tomcat，请求分为3类：1、请求servlet  2、请求jsp  3、请求静态资源。不同的请求tomcat处理也不一样	
+		
+=======================================================高级======================================================
+
+一、SSH框架：不常用了
+	Struts2、Spring、Hibernate（ORM框架） orm：object relation mapping(对象关系映射，实体类映射到数据库表)
+
+二、SSM框架：
+	springmvc、spring、mybatis
+
+	springmvc：基于DispatcherServlet
+		1.处理器映射器(handlerMapping)：请求路径映射到对应的handler
+		2.处理器适配器(handlerAdaptor)：执行处理器
+		3.处理器（handler）：注解为@RequestMapping("/sss")的方法即是handler
+		4.视图解析器（InternalResourceViewResolver）：解析视图（转发、重定向）
+		转发"forward:index.jsp";    重定向"redirect:index.jsp";  如果不指定类型"index.jsp"则默认转发。
+		当使用"forward:" 或"redirect:"时，返回值以/开头。会把返回结果当成另一个handler，不会使用视图解析器(InternalResourceViewResolver)，转发到另外一个handler时使用："forward:/test/test";当要转到jsp时就需要手动指定前后缀："forward:/WEB-INF/jsp/index.jsp";
+		而直接返回"test/index"时会使用视图解析器。自动指定前缀后缀
+		即配置了视图解析器后，如果不使用forward:或redirect:时，默认是转发，且把其视为视图（.jsp)
+		
+		return "forward:/WEB-INF/jsp/serviceManager/askLeave.jsp";返回view
+		return "forward:/user/login";返回另一个handler(controller)
+
+		可以设置自己的类型转换器 <mvc:annotation-driven><类型转换器></类型转换器></mvc:annotation-driven>
+		
+		常用注解：@GetMapping()，PostMapping()：即RequestMapping(method=RequestMethod.GET)
+			1.@RequestMapping("url")：使用在方法上时表示这个方法就是一个handler
+			2.@ResponseBody：表示此handler将返回json数据。不需要进行json转换，只需返回对象即可
+			3.@RequestParam("")：此注解用在方法的参数上，将request中的参数注入方法的参数上
+			4.@PostConstruct：此注解用在方法上，当spring创建了此方法所在类的bean后会立马执行一次有此注解的方法，一般用来在项目启动时做一些事情,在spring加载完后执行
+			4.@PathVariable("key")：此注解为截取请求的url中的通配符部分的值注入到方法的参数上。一般用在restful中
+				如：	
+					@RequestMapping("/query/{key}") {key}为通配符，即请求时的url为 query/任意值。这个任意值一般是查询、修改、删除的条件
+					public List<Order> queryOrders(@PathVariable("key") String key){
+						......
+					}
+					请求此handler时  query/123。在handler的方法中的key值为123，我们就可以拿这个参数去查询数据了				
+			5.@Controller：用在实现类上，是spring的注解，用于创建bean。controller层的@RequestMapping("")由springmvc去扫描创建映射url，
+				在springmvc.xml中配置<context:component-scan basePackage="com.hgx.projectName.controller"/>
+				否则写的controller无效，404。have not mapping handler for[user/login],因为没有创建这个handler		
+			
+			6.@RequestBody：封装请求参数为application/json类型的参数，如请求参数为{name:'ss',age:18}  请求类型为application/json时，服务端public Result saveUser(@RequestBody UserVo user){....}
+					一般请求内容类型为 application/json的请求方式 为ajax或Java的http请求，通过浏览器和post请求无法设置请求类型为application/json
+				@RequestBody与RequestParam无法通过父类继承，必须写在实现类上
+
+				不使用RequestBody接受对象时是form-data数据提交
+
+			restful：根据请求方式执行增删改查，restful是一种设计风格，通过请求方式来识别增删改查，通过pathParam来传参数@PathVariable("param")获取参数
+				在Restful之前的操作：
+				http://127.0.0.1/user/query/1 GET  根据用户id查询用户数据
+				http://127.0.0.1/user/save POST 新增用户
+				http://127.0.0.1/user/update POST 修改用户信息
+				http://127.0.0.1/user/delete GET/POST 删除用户信息
+
+				RESTful用法：
+				http://127.0.0.1/user/1 GET  根据用户id查询用户数据
+				http://127.0.0.1/user  POST 新增用户
+				http://127.0.0.1/user  PUT 修改用户信息
+				http://127.0.0.1/user  DELETE 删除用户信息
+
+				之前的操作是没有问题的,大神认为是有问题的,有什么问题呢?你每次请求的接口或者地址,都在做描述,例如查询的时候用了query,新增的时候用了save,其实完全没有这个必要,我使用了get请求,就是查询.使用post请求,就是新增的请求,我的意图很明显,完全没有必要做描述,这就是为什么有了restful.
+				使用restful：
+					GET方式就是查询	
+					POST方式就是新增
+					PUT方式就是修改
+					DELETE方式就是删除
+
+				如：	@RequestMapping("my/test")
+					public class MyController{
+						@RequestMapping(method=RequestMethod.POST)//post==新增
+						@ResponseBody
+						public Map<String,Object> save(User user){....}
+						
+						@RequestMapping("{key}",method=RequestMethod.GET)//get==查询
+						@ResponseBody
+						public Map<String,Object> query(@PathVariable String key){....}
+						
+						@RequestMapping(method=RequestMethod.PUT)//PUT==修改
+						@ResponseBody
+						public Map<String,Object> query(User user){....}
+
+						@RequestMapping("{key}",method=RequestMethod.DELETE)//DELETE==删除
+						@ResponseBody
+						public Map<String,Object> query(@PathVariable String key){....}
+					}				
+			
+			springmvc的文件上传必须创建一个bean：表示支持文件上传，且id必须是multipartResolver，springmvc是通过bean name查找对象的。
+				<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"></bean>
+		
+			springmvc映射handler的4种方式：handlerMapping
+				1.根据beanName：<bean name="/user/login" class=""/>这种方式的handler需要implements HttpRequestHandler接口
+				2.根据controller的类名来映射寻找controller <bean id="hello3Controller" class="com.controller.Hello2Controller"></bean>
+				3.根据URL来映射寻找controller
+				4.通过注解
+				5.<mvc:annotation-driven/>：这个标签包含了处理器映射器和处理器适配器
+			
+			springmvc的handler方法的入参：request,response是肯定可以有的，因为springmvc是基于dispatcherServlet的，servlet的doPost/doGet/service方法都有request、response入参，所以springmvc的handlerAdaptor在调用handler方法中能够将request、response传入。关于请求参数的封装对象（实体类）则是先创建对象然后在将表单的参数注入到对象中，所以参数的key必须与实体类的属性名相同。文件上传时有个springmvc会创建一个MultiPartFile对象，也是可以传入handler方法中的。
+		
+			请求可以传String[]    ，如ajax请求 
+						var data = [];
+						data.push("a");
+						data.push("b");   
+						$.ajax({
+							type:'post',		
+							url:'',
+							data:{"ids":data}
+							dataType:'json',
+							success:function(responseData){
+								
+							}
+						})
+
+			public Result save(@RequestParam("ids") String ids){
+				//ids为a,b
+			}
+
+	spring:IOC、AOP     IOC：只有由spring创建的对象（即在spring IOC容器中的对象）才能互相依赖注入
+			spring在启动时解析.xml配置文件和扫描各个类的spring注解，然后通过 容器创建bean
+			spring是业务逻辑层和其他各层的松耦合的一个框架
+		IOC由2部分组成：
+			1.IOC：控制反转：对象的创建交给spring容器来创建，而不是直接在代码中new。像@Component、@Controller等注解就是IOC
+			2.DI:依赖注入：根据对象之间的依赖关系从spring容器中找到对象进行注入。如A依赖B（A类需要B类的对象）则从容器中找到B对	象注入到A对象中。像@Autowired注解就是依赖注入
+
+		IOC：依赖注入，工厂模式，通过spring创建并管理对象使用@Autowired\@Resource注解给属性进行注入对象
+		@Resource（这个注解属于J2EE的），默认安照名称进行装配，名称可以通过name属性进行指定
+		@Autowired默认按类型装配（这个注解是属业spring的），默认情况下必须要求依赖对象必须存在，如果要允许null 值，可以设置它的required属性为false
+
+		aop:面向切面编程，代理模式（cglib）通过动态继承目标类进行方法切入（代理）
+		代理由两种实现方式：
+			1.通过实现同一接口，代理类中引用目标对象来执行目标方法
+				Proxy.newInstance(){}//匿名内部类
+			2.通过动态继承目标类（cglib），实现MethodInterceptor接口
+				动态继承：不是手写子类，而是通过代码来实现关联两个类的关系
+				EnHancer(增强类) MethodInterceptor方法拦截器
+				1.创建增强类对象，指定父类（目标类）
+				2.给增强对象设置方法拦截器
+
+		@Bean 方法级别注解，将返回的bean交给spring管理
+
+		@Bean
+		public MyBean getMyBean(){
+			return new MyBean();
+		}		
+
+		bean的id与name的区别，id不能重复，name可以重复
+
+		spring的事务管理是根据抛出的异常进行事务处理的当没有抛出运行时异常时是不会进行事务回滚的，所以当我们在service层进行事务管理时，不要try{}catch(Exception e){}finally{}捕获异常，否则不会进行事务回滚
+		也可以手动进行事务回滚：TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+		
+		声明式事务也是根据aop实现的，如切入serviceA方法（环绕切入），在 serviceA方法执行之前开启事务，当serviceA方法抛出运行时异常时进行回滚
+
+		spring的7种事务传播性：事务传播行为用来描述由某一个事务传播行为修饰的方法被嵌套进另一个方法的时事务如何传播。
+			1、PROPAGATION_REQUIRED：如果当前没有事务，就创建一个新事务，如果当前存在事务，就加入该事务，该设置是最常用的设置。
+
+			2、PROPAGATION_SUPPORTS：支持当前事务，如果当前存在事务，就加入该事务，如果当前不存在事务，就以非事务执行。‘
+
+			3、PROPAGATION_MANDATORY：支持当前事务，如果当前存在事务，就加入该事务，如果当前不存在事务，就抛出异常。
+
+			4、PROPAGATION_REQUIRES_NEW：创建新事务，无论当前存不存在事务，都创建新事务。
+
+			5、PROPAGATION_NOT_SUPPORTED：以非事务方式执行操作，如果当前存在事务，就把当前事务挂起。
+
+			6、PROPAGATION_NEVER：以非事务方式执行，如果当前存在事务，则抛出异常。
+
+			7、PROPAGATION_NESTED：如果当前存在事务，则在嵌套事务内执行。如果当前没有事务，则执行与PROPAGATION_REQUIRED类似的操作。
+
+		aop：所谓"切面"，简单说就是那些与业务无关，却为业务模块所共同调用的逻辑或责任封装起来，便于减少系统的重复代码，降低模块之间的耦合度，并有利于未来的可操作性和可维护性。		
+			相关对象  JoinPoint(前置、后置)、ProceedingJoinPoint（环绕）
+
+			切面类的定义：一个普通的类：
+			public class TestAspectJ{
+				//切面方法
+				public void test(JoinPoint point){//根据是否使用环绕 来 决定使用proceedingJoinPoint
+	
+				}	
+				//异常处理
+				public void afterThrowing(Throwable e){
+					
+				}
+			}
+			
+			
+			spring.xml配置：
+			<!--切面类对象-->
+			<bean id="testAspectJ" class="com.hgx.test.TestAspectJ"></bean>	
+			 <!-- 配置AOP 切面 -->
+   			 <aop:config>
+        				<!-- 定义切入点函数 -->
+        				<aop:pointcut id="pointcut" expression="execution(* com.zejian.spring.springAop.dao.*.*(..))" />
+        				
+				<!-- 定义通知 order 定义优先级,值越小优先级越大-->
+        				<aop:aspect ref="testAspectJ" order="0">
+            					<!-- 定义通知 method 指定通知方法名,必须与MyAspectXML中的相同 pointcut 指定切点函数 -->
+            					<aop:before method="test" pointcut-ref="pointcut" />
+            					<!--异常通知 throwing="throwable" 指定异常通知错误信息变量,必须与类中声明的名称一样-->
+            					<aop:after-throwing method="afterThrowing" pointcut-ref="pointcut" throwing="throwable"/>
+        				</aop:aspect>
+    			</aop:config>	
+
+		spring aop需要通过spring容器来实现，目标类对象需要由spring容器创建：因为spring aop是基于spring的cglib代理模式的
+			context.getBean(com.hgx.spring_aop.TargetClass.class).targetMethod();
+		
+		常用注解：@Component、@Bean、@Configuration、@Controller、@Service、@Repository、@Autowired、@transactional、@PropertySource:加载properties文件，propertyPlaceHolderConfig类的注解形式 、@Value("${name}")：获取 配置文件的值、@PostConstruct：创建bean后执行有此注解的方法
+
+	mybatis：解析mapper.xml获取方法对应的sql，自动创建代理类执行sql,并封装数据，生成代理实现类。
+		原理：1.扫描mapper配置文件，每个select、delete、update、insert、标签都会创建一个mapperStatement对象与其id绑定
+			mapper标签的作用是与dao接口绑定，mapperStatement对象的id需要select等标签的id加上mapper标签的namespace得到唯一的mapperStatementId
+		          2.在sqlSession.getMapper()时通过jdk动态代理创建mapper接口的代理类，在执行mapper接口的方法时进行拦截找到方法对应的mapperStatement对象执行得到结果
+
+		一对多：collection。多对多（双向一对多）：collection，与一对多一样。一对一：association
+		mybatis一对多有两种方式：
+			方式1：查出所有，通过Java代码区分一对多
+			方式2：通过多次sql查询，拿到一的外键去查询多。for循环查询
+		
+		mybatis是orm（对象关系映射）框架：查询出的结果集字段与Java实体类属性一一对应，然后将结果集取出封装到实体类中	
+		
+		mybatis可以一次执行多条sql，使用foreach时      用;作为分隔符，正是因为;是sql的结束 符，所以可能 出现 sql注入攻击，当使用${key}取值时是直接作为字符串连接，没经过预处理，当key为    ;delete from tablename;时将会执行删除操作，很危险。
+		所以一般情况下不使用${}取值，而是使用#{key} 取值，因为#{}是预处理sql，可以避免sql注入风险，所以当需要模糊查询时 可以使用  where name like concat('%',#{key},'%') and ... 将%与值连接
+		
+		mybatis的foreach可以将多条sql用;拼接在一起，然后执行，如
+			update tables set name='' where name='张三';
+			update tables set name='李五' where name='李四';
+
+	在mybatis的基础上的增强版mybatis-plus：与hibernate一样的orm。 实体类继承EntityWraper
+	不需要写sql，通过mybatis-plus自带的方法可以对数据库进行简单的操作（单表增删改查）
+
+	mybatis中获取入参值的2中方法：
+		1.#{field}
+			这种取值方式使sql是预处理形式，可以防止sql注入的风险，PreparedStatement
+		2.${field}：为防止sql注入风险，一般不用此方式取值
+			这种取值方式是直接以字符串的形式拼接sql
+		mapper.xml中的parameterType：mapper(dao)接口的入参是什么类型就填什么类型List：java.utl.List;Map:java.util.Map; int :int；
+		resultType：返回值是List则为List里面存的类型，mybatis会根据查询出的结果集去循环封装
+
+		当dao层方法中有 多个相同 类型的参数时取值为   可以使用#{0}   #{1} 也可以使用@Param("param1")绑定参数然后使用#{param1}，且属性parameterType不要写
+		
+		mybatis的select标签必须有resultType或resultMap，而parameterType属性可有可无，尤其是有多个参数时可以使用#{0},#{1},#{2}或@Param(“param1”)来绑定获取参数
+		
+		一对多有两种方式：
+			1.先连接表查出结果集，根据mapper.xml中配置的映射关系通过Java代码实现一对多
+
+				<select id="queryHusbandAndWife" resultMap="husbandAndWife" parameterType="int">
+					select * from husband h left outer join wife w on h.wid=w.wid where h.hid=#{hid}
+				</select>
+				<!-- 一对一双向关联   两种自定义返回集结果 -->
+ 				<resultMap type="Husband" id="husbandAndWife">
+					<id property="hid" column="hid"/>
+					<result property="hname" column="hname"/>
+					<!--多表联合查询  必须要映射   不映射会报错-->
+					<association property="wife" javaType="Wife">
+						<id property="wid" column="wid"/>
+						<result property="wname" column="wname"/>
+					</association>
+				</resultMap> 
+
+			2.通过内嵌sql，即先查出“一”的一条数据，再通过“一”的主键作为外键执行另一条sql查询“多”。相当于使用 for循环执行sql	
+			
+				<!-- 方式二：嵌套查询：通过执行另外一个SQL映射语句来返回预期的复杂类型 SELECT   * FROM class WHERE c_id=1; SELECT   * FROM teacher WHERE t_id=1   //1 是上一个查询得到的teacher_id的值 -->
+     				<select id="queryHusbandAndWife2" resultMap="husbandAndWife2" parameterType="int">
+      					select * from husband where hid=#{hid}
+     				</select>
+
+     				<resultMap type="Husband" id="husbandAndWife2">
+      					<id property="hid" column="hid"/>
+      					<result property="hname" column="hname"/>
+					<!--column为 传递到子sql的参数字段-->
+      					<association property="wife" javaType="Wife" select="getWife" column="hid"></association>
+     				</resultMap>
+
+     				<select id="getWife" resultType="Wife" parameterType="int">
+     					 select * from wife where wid=#{wid}
+     				</select>
+	
+			3.foreach标签：
+				<delete id="deleteBatch"> 
+　　　　					delete from user where id in
+　　　　					<foreach collection="array" item="id" index="index" open="(" close=")" separator=",">
+　　　　　　					#{id}
+　　　　					</foreach>
+　　				</delete>
+				释义：
+　　　　				collection ：collection属性的值有三个分别是list、array、map三种，分别对应的参数类型为：List、数组、map集合，我在上面传的参数为数组，所以值为array
+					当parameterType为对象类型时，对象类型里面包含集合则collection="obj.ids"   obj为dao接口参数名(未使用@Param绑定参数)  ids为obj对象中的集合
+　　　　				item ： 表示在迭代过程中每一个元素的别名
+　　　　				index ：表示在迭代过程中每次迭代到的位置（下标）
+　　　　				open ：前缀
+　　　　				close ：后缀
+　　　　				separator ：分隔符，表示迭代时每个元素之间以什么分隔
+
+
+
+	spring的bean由spring创建。springmvc的bean由springmvc创建。spring与springmvc是两个不同的容器，所以相关的配置需要具体到对应的配置文件中
+	如springmvc.xml中需要配<context:component-scanner base-package="com.hgx.*.controller"/>来扫描controller层的@RequestMapping注解创建handlerMapping，否则无法创建handler（@RequestMapping("/xx")）报错:not find handler method for [/product/getProduct]
+	@RequestMapping注解的方法都是handler
+
+	spring配置中的<context:component-scanner base-package="com.hgx.*"/>创建的bean由spring管理
+	springmvc的配置在dispatcherServlet中加载的，spring的配置是ContextLoaderListener加载的
+		
+	将*.properties配置文件中的配置注入到属性中：
+		1.通过配置spring加载配置文件<bean class="propertyPlaceHoldConfigure"><property name="locations"><list><value></value><list></property></bean>
+		2.使用注解@Value("${key}")添加到属性中。将值注入属性
+
+
+	ssm常用注解：
+		springmvc：@RequestMapping("handler映射")、@ResponseBody、@RequestParam("绑定参数")、@PathVariable("restful的url参数绑定")、@ModelAttribute("将参数存至request中")、@SessionAttribute（"将参数存至session域中"）
+		spring：@Controller、@Service、@Repository、@Bean、@Component、@Configuration、@Autowired、@Value、@PostConstruct
+		mybatis：@Param("参数绑定")，不常用@insert、@update、@delete、@select、@Mapper在类上使用
+	
+		bean注入注解@Resource是Java ee的注解默认根据beanName注入
+
+	
+	SSM中的拦截器：
+		springmvc:HandlerInterceptor接口,在springmvc中配置<mvc:interceptors><bean class="全局拦截器拦截所有handler"></bean><mvc:interceptor><mvc:mapping path="/saveUser"><bean class="拦截特定映射handler"></mvc:interceptor></mvc:interceptors>
+			
+		mybatis：实现Interceptor接口，在mybatis.xml中配置<plugins><plugin interceptor="com.hgx.myInterceptor"></plugins>
+
+
+
+	springmvc基础配置：
+		<!--处理器映射器（注解方式）、处理器适配器-->
+		<mvc:annotation-driven></mvc:annotation-driven>
+		<!--处理器：在controller层使用@RequestMapping("save")将方法映射为处理器-->
+		<!--视图解析器-->
+		<bean class="InternalResourceViewResolver"/>
+		<!--响应json数据编码配置-->
+		<bean class="MappingJackson2HttpMessage"></bean>
+		<!--文件下载支持,id必须为multipartResolver，在处理器方法的参数中加MultipartFile参数来接收文件对象-->
+		<bean id="multipartResolver" class="CommonsMultipartResolver></bean>
+		<!--静态资源映射,将静态资源映射为 处理器-->
+		<mvc:resources mapping="映射后的访问路径" location="资源本地路径"/>
+
+		再在web.xml中配置servlet加载springmvc：
+			<servlet>
+				<servlet-name>springmvc</servlet-name>
+				<servlet-class>DispatcherServlet</servlet-class>
+				<!--值>=0时表示在服务器启动时加载此servlet-->
+				<load-on-startup>1</load-on-startup>
+			</servlet>
+			<servlet-mapping>
+				<servlet-name>springmvc</servlet-name>
+				<!--注意不要使用/*，/*是拦截所有包括静态资源.jsp等-->
+				<url-pattern>/</url-pattern>
+			</servlet-mapping>
+			
+	spring与mybatis整合基础配置：
+		1、dataSource：数据源
+		2、sqlSessionFactory：工厂
+		3、transactionManager：事务管理
+		4、mapperScannerConfig：扫描dao层的mapper接口获取mybatis的代理实现类交给spring容器管理
+		5、component-scan：spring组件扫描(扫描spring注解)
+		6、propertyPlaceHolderConfig：通过 spring加载properties配置文件
+		7、开启注解事务<tx:annotation-driven/>：在 service层使用@Transactional注解来使用事务
+
+		再在web.xml中配置启动spring的监听：
+		<!--spring配置文件所在路径-->
+		<context-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:config/spring.xml;classpath:config/spring2.xml</param-value>
+		</context-param>		
+		<listener>
+			<listener-class>ContextLoadListener</listener-class>
+		</listener>
+				
+		配置编码过滤器：
+		<filter>
+			<filter-name>encodingFilter</filter-name>
+			<filter-class>CharacterEncodingFilter</filter-class>
+			<init-param>
+				<param-name>encoding</param-name>
+				<param-value>utf-8</param-value>
+			</init-param>
+		</filter>
+		<filter-mapping>
+			<filter-name>encodingFilter</filter-name>
+			<url-pattern>/*</url-pattern>
+		</filter-mapping>
+		
+		log4j监听：
+		<context-param>
+			<param-name>log4jConfigLocation</param-name>
+			<param-value>classpath:config/log4j.properties</param-value>
+		</context-param>
+		<listener>
+			<listener-class>Log4jConfigListener</listener-class>
+		</listener>
+		
+		配置项目唯一标识：一个tomcat有多个项目时使用，不配置的话tomcat会使用默认的标识，导致多个项目标识冲突报错
+			<context-param>
+				<param-name>webAppRootKey</param-name>
+				<param-value>myapp.root</param-value>
+			</context-param>
+		
+		.....最后配置欢迎页、错误页和其他servlet、listener、filter等
+
+		到此，ssm整合完毕
+三、数据库
+	mysql、Oracle，两者相差不大，mysql是轻量级的数据库免费的，而Oracle是重量级的，收费的。MySQL、Oracle都是基于IO的，查询起来可能比较慢
+	
+	数据库的特性：原子性、一致性、隔离性、持久性
+
+	ddl:数据库定义语言
+	1.创建表：横表（一般的表）
+		create table mytable(
+			mid varchar2(100) primary key,
+			mname varchar2(20) default '',
+			mage int(3) default null
+		); 
+
+		纵表：key-value形式，用于字段不固定的数据
+		create table ztable(
+			zid varchar2(20) primary key,
+			zkey varchar2(20),
+			zvalue varchar2(20),
+			zuser varchar2(20);
+		);	
+		如 ：  zid	zkey	zvalue	zuser
+			1	语文	80	张三
+			2	数学	99	张三
+			3	英语	89	张三
+			4	语文	79	李四
+	2.删除/修改表：
+		drop table mytable;
+		ALTER TABLE mytable ADD msex int(1); 
+
+	
+	dml：数据库操作语言，增删改查。
+	1.插入数据
+	insert into mytable(mid,mname,mage) values('1','嘻嘻',18);
+	当mname不存在时插入，存在则不插入
+	insert into mytable(mid,mnanme,mage) select #{mid},#{mname},#{mage} from dual where not exists（select1 from mytable where mnage=#{mname}）
+	2.删除数据
+	delete from mytable where mid='1'
+	delete from mytable where mid in ('1'）;  in ：批量处理，但是效率低，不能使用索引
+
+	3.更改数据,数据库在更改之前会先把数据查出来
+	update mytable set mname='哈哈' where mid='1';
+
+	4.查询数据，查询是使用最多的。当表的字段与mysql关键字重叠时，需要使用转义  如  order是mysql关键字，在查询是使用 select `order` from tablename;  如果判断是否为null 则用 is null或 is not null
+		多表时，一个主键即代表一条数据，外键也映射另一张表的一条数据。
+		查询数据往往是复杂的，需要结合一下知识：
+		多表查询，左外连接、右外连接、全连接、子查询、数据库函数、内连接，自然连接（笛卡儿积）、group by（分组） xx、order by（排序） xx desc(逆序) case when .. then ..else.. end
+		
+		运算符：= 、!= 或<> 、 in 、 like 、>= 、<= 、 is not null 、 is null 、 between .. and ..
+		
+		in可以多个字段组合如：
+		select * from tableA a where (a.name,a.age) in (('xxx',18),('aaa',19)) 
+
+		简单的查询
+		精确查询：
+		select * from mytable where mname='哈哈'
+		模糊查询：
+		select * from mytable where mname like '%哈%' 占位符有 %和_
+			
+		连接操作：
+			内连接：tableA A inner join tableB B on A.id=B.aid
+			左外连接： tableA A left outer join tableB B on A.id=B.aid;  其中outer可以省略
+			右外连接： tableA A right outer join tableB on A.id=B.aid;
+			全连接：  tableA A full join tableB on A.id=B.aid;   MySQL不支持全连接
+			结果集连接： union/union all；注意使用union时，两个结果集的字段必须相同，包括顺序，数量，别名。
+				select name,age from tableA where name='张三'
+				union 
+				select name,age from tableA where name='李四'
+			自然连接：select A.*,B.* from tableA A,tableB B where A.id=B.aid 
+			
+			子查询：sql里面嵌套sql
+				select (select name from tableB B where B.id=A.userid limit 1) username from tableA 
+					
+		多表连接在on后面使用条件与在where后面使用条件的区别：
+			在on后面的条件只是某个表的条件如：先执行on的条件再进行连接
+			select a.*,b.* from a left join b on b.name!='阿三' and a.id=b.id
+			而where的条件是连接后对连接后的结果集 进行条件查询
+		在使用 inner join 时 on和where所得到的结果集是一样的，但是左外、右外连接、全连接所得到的结果集可能不一样
+		
+		mysql默认是不区分大小写查询的   
+			select * from tablename where col = 'abc'
+			select * from tablename where col =  'ABC'
+			得到的结果是一样的
+
+			select * from user where binary user_name='abc'; --binary   是让字段区分大小写
+	5.常用函数：
+		
+		count(1)：统计
+		max():取最大值，分组group by 取每组的最大值
+		min():取最小值
+		date_format(date,'%Y-%m-%d')：日期格式化
+		STR_TO_DATE(str,format):字符串转日期
+		sum():求和，内聚函数，即使分完组后也会查找每组的所有数据求和。
+		ifnull('a','b')：类似于 a==b?a:b
+		now()：获取当前时间
+		concat('a','b')：连接字符串
+		group_concat(字段)：分组连接，将同一组的某个字段的值连接默认用,分开
+		distinct():去重，只有当查出来的两条数据的所有字段都相同时才有效，也可以使用group by 进行去重
+		case when msex='1' then '男' when msex='0' then '女' else '人妖' end  ; 注意使用case when 时结尾 必须使用“end”结束   如果只有一种情况也可以使用if()函数，if(name='aa',1,0)  如果name='aa'则1否则为0
+		case when...then ... when ...then .... else ... end
+		exists()
+		union(自动去重)/union all（不去重，但效率较高）
+		-------------分组，分类型求和----------------------------
+		行转列：
+		SELECT
+			a.p_id,
+			sum(CASE WHEN a.s_id = '1' THEN a.p_num ELSE 0 END),
+			sum(CASE WHEN a.s_id = '2' THEN a.p_num ELSE 0 END),
+			sum(CASE WHEN a.s_id = '3' THEN a.p_num ELSE 0 END)
+		FROM
+		tableA a
+		GROUP BY a.p_id
+		此sql是先分组（group by ）再查询select
+		
+		列转行：
+		SELECT  id ,'name' key, NAME value FROM TABLE
+		UNION ALL
+		SELECT id,'age' key,AGE value FROM TABLE
+		UNION ALL
+		SELECT id,'sex'key,SEX value  FROM TABLE
+		使用union all将结果集连接，有多少列就union all多少次
+
+	6.存储过程（procedure）、触发器（trigger）、自定义函数（function）、视图(View)
+		1.存储过程：
+		create procedure my pro(name in varchar2(10),age out int(2))as
+		declare myname varchar2(2);
+		begin
+			select mage into age from mytable where mname=name;
+		end;
+
+		2.触发器，数据库的监听,在操作数据库时会产生两张幻表一个old、一个new。 old存储旧数据，new存储新数据。
+		create trigger mytrigger after insert on mytable for each row
+		begin
+			insert into mytable2(mid,mname,mage,msex) values(new.mid,new.mname,new.mage,new.msex); 
+		end;
+			
+		存储过程说白了就是一堆 SQL 的合并。中间加了点逻辑控制。 但是存储过程处理比较复杂的业务时比较实用。可以返回多个结果集，类似方法，执行多条sql时只需要连接一次
+		
+		1.存储过程只在创造时进行编译，以后每次执行存储过程都不需再重新编译，而一般SQL语句每执行一次就编译一次,所以使用存储过程可提高数据库执行速度。
+		2.当对数据库进行复杂操作时(如对多个表进行Update、Insert、Query、Delete时），可将此复杂操作用存储过程封装起来与数据库提供的事务处理结合一起使用。
+		3.存储过程可以重复使用,可减少数据库开发人员的工作量。
+		4.安全性高,可设定只有某用户才具有对指定存储过程的使用权。
+
+		3.函数：必须有返回值
+		CREATE FUNCTION myfunction (
+			param VARCHAR (20),
+			param2 VARCHAR (20)
+		) RETURNS VARCHAR(40)
+
+		BEGIN
+
+		DECLARE a VARCHAR(40);
+
+		select a_employee.id into a from a_employee limit 1;
+		RETURN a;
+
+		END 
+
+		4.视图View：多张表查询组成的一张新表
+
+		CREATE VIEW StudentView（Sno，Sname，Ssex，Sage，Sdept）AS SELECT SX.Sno，SX.Sname，SY.Ssex，SX.Sage，SY.Sdept FROM SX，SY WHERE SX.Sno=SY.Sno；
+		
+		使用视图：select * from StudentView where sno='1'
+
+	7.数据库相关扩展
+		1.查询数据库表的结构（MySql）information_schema是数据库名，是一个mysql自带的系统数据库，存储了一些表，而这些表是用来记录我们自定义数据库中的表的
+			select * from information_schema.`TABLES`
+		information_schema是MySQL自带的，它提供了访问数据库元数据的方式。什么是元数据呢？元数据是关于数据的数据，如数据库名或表名，列的数据类型，或访问权限等。
+
+		2.更新语句的执行
+			update tableA a set a.alias=a.name where a.sex='1' 将sex为1的别名设为名字 
+			更新语句首先查询出数据，然后一条一条的更新
+
+		3.创建备份表
+			create table tabeA_back(select * from tableA);
+
+		4.sql效率问题
+			1.如果可以，使用union代替or
+			2.如果可以，使用exists代替in。当不需要查出某些表的字段但是需要某表作为条件时。实际上是子查询
+				select a.* from tableA a where exists(select 1 from tableB b where a.bid=b.id and b.sex='1')
+				查询语句其实也是一行数据一行数据的查询，查询出一行数据执行一次子查询。	
+			3.如果可以，不要使用模糊查询（like ）因为模糊查询会使索引无效
+			4.给经常用作条件的字段添加索引
+			5.inner join 快于子查询
+			直接使用join的时候，mysql查询优化器会自动选择数据量最小的那张表作为驱动表。
+			用left join的时候，左边的是驱动表。
+			考虑到查询效率，能用join就不要用left\right join 使用外连接非常影响查询效率，就算要用也要用数据量最小的表作为驱动表来驱动大表。
+
+
+		数据库的增删改查机制（步骤）：
+			增：先查询是否存在相同的主键，不存在则插入表中
+			删：先查询出符合条件的数据再删除：一行一行的操作。
+			改：先查询出符合条件的数据再更改：一行一行的操作。
+			查：扫描表的每一行数据，找出符合条件的数据：一行一行的操作。
+			
+		sql执行顺序：
+			sql执行顺序 
+			(1)最外层from 
+			(3) join 
+			(2) on 
+			(4) where 
+			(5)group by(开始使用select中的别名，后面的语句中都可以使用)
+			(6) avg,sum.... 
+			(7)having 
+			(8) select 
+			(9) distinct 
+			(10) order by 
+			(11)limit :必须先排序再分页，不然排序是无效的(分页后的排序是乱的)
+
+		
+		复合主键、联合主键
+			复合主键：一个表的两个字段复合在一起作为表的主键，当一个字段不足以满足数据唯一性的时候。
+
+			联合主键：两个表的主键联合在一起作为主键
+
+			两种主键一般用于多对多的中间表的主键，可以防止出现重复的多对多
+		
+
+		数据库的优化：
+			分为两部分：
+				1.数据库本身的优化
+					读写分离；使用阿里的mycat中间件，类似nginx，接到mysql，如果是select则将sql分配到10.7.254.1执行，如果是写（insert、update、delete）则到10.7.254.2执行。最后再将10.7.254.2的数据同步到10.7.254.1中。
+						使用mycat时，Java的连接数据库的url为mycat
+					使用缓存，如redis
+				2.sql优化
+					建立索引；
+					如果可以则不使用或少使用like，会使索引无效；
+					union代替or；
+					exists代替in（用于多表，但是只需要查询一个表的字段时），inner join 效率高于exists，因为exists也是子查询
+					分页查询；
+					count(1)而不是count(*)；
+					最好不使用select *，而是只查询需要的字段；
+					使用批量处理，减少访问次数，如MySQL的批量插入、where age in();
+					>=代替>，如where a>=3 代替 where a>2。前提时a存的是整数时才不会影响查询数据					
+					
+					如果不需要去重，union all 代替union，因为union会去重
+					where代替having，即先条件再分组。
+					尽量用 join 代替子查询。子查询慢是因为每查出一行都会查询整个子表，而使用多表连接则直接从连接的临时表 查询，相当于单表查询，只是在表连接时比较慢
+	
+	数据库连接池JDBCPool:顾名思义，存放数据库连接对象Connection的池子，先创建一些连接对象存放到池子里面，当需要且有连接对象空闲时拿来使用，避免了重复创建和关闭，减少了对数据库的连接。
+				如果不使用连接池，则每次需要对数据库操作时都要去连接数据库（创建数据库连接对象），操作完后关闭连接（销毁连接对象），这样效率很低，且对数据库的压力很大。		
+	
+
+	行转列：select  name from tablename union all select age from tablename union  ......有多少 列就union all多少次
+
+	列转行 ：select sum(case when  key='语文' then value else 0 end) 语文,sum(case when key='数学' then value  else 0 end )  数学, xueshengID  from tablename group  by 学生ID       原理：分组求和是一组一组的求和，求和时将不属于需要查的字段的值变为 0
+	
+	Mysql索引：索引是一种特殊的文件(InnoDB数据表上的索引是表空间的一个组成部分)，它们包含着对数据表里所有记录的引用指针。更通俗的说，数据库索引好比是一本书前面的目录，索引就相当于一本书的目录，我们找到某个章节在多少页就能定位到需要查找的章节了，所以建立索引 就相当于生成目录 。
+		MySQL索引类型：普通索引、唯一索引、全文索引、主键索引、单列索引、多列索引
+		CREATE INDEX index_name ON table_name (column_list)
+		全文检索  使用 select * from tablename   where match(title,text) against('key1 key2' with boolean model)进行检索，一般用在博客搜索等。注意：有多少个字段建立了全文检索就要匹配多少个字段，不然嫂sql报错
+
+	当数据存在时修改数据的sql：需要有唯一索引(或主键索引)，一般是其他字段的唯一索引
+		insert into tablename(name,age)values ('张三',18)  ON DUPLICATE KEY UPDATE c=c+1;      DUPLICATE ：重复的
+		有1种方式进行操作，其他两种：
+			1.replace：不存在则插入，存在则删除原数据后再插入
+			replace into tables(id,name,age) values ('111','里斯 ',22)
+
+	聚合函数不能与非分组的字段一起查出来：select count(1) ,name from tables;       这条sql是错误的   正确的是：select count(1), name from tables group by name;  先分组后 统计
+
+	数据库优化：
+		1.建立索引
+		2.模糊查询不使用左边%，这样会使索引失效。like 'XX%'。
+		3.使用exists代替in
+		4.表连接时将数据量少的表放在join前面
+		5.union all比union高效，因为union all是连接所有结果，而union则是连接去重后的结果
+		6.可以滤过大量纪录的条件必须写在where字句的最后面
+		7.使用count(1)代替count(*)
+		8.避免使用select *，而是指定字段查询 select name, age from table
+		9.使用explain解析sql执行
+		10.inner join mysql会自动选择小表作驱动表，但是left join 则左边作为驱动表 ，所以尽量使用inner join
+
+		表连接原理：
+			1.先查询驱动表（查询一次）
+			2.根据驱动表数据查询连接的表（每一条驱动表的数据都需要查询一次连接表，很多次查询）
+			3.将连接结果存到连接缓存区
+			4.根据where条件查询缓存区的连接结果集
+			根据连接原理可知，驱动表的数据越少越好，查询次数越少，效率越高。
+			mysql驱动表的选择：inner join时mysql自动选择数据量少的表做驱动表，left out(可省略) join 、right join 、full join则左边表作为驱动表
+	
+	数据库语法问题：
+		1.count函数问题：
+		在在count里面进行子查询和条件判断需要在最后加 or null,否则编译不通过，但是使用case when不需要加 or null
+		select count((select 1 from api_call_descript a where a.api_id=b.id) or null) from api b   正确
+		select count(select 1 from api_call_descript a where a.api_id=b.id) from api b  没加 or null 会报错
+
+		select count(if(name='小明',1,0) or null) from table; 需要加 or null
+
+		count(expr)中的expr除了是case when语句，其余的都要加or null才能统计出正确的值，即便是子查询也要加or null。
+		
+		sum() 则不需要加 or null 
+	
+		2.子查询问题：
+			因为sql解析是从最外层from开始，所以子查询都可以引用外出的表别名
+		
+扩展技术：
+
+	0.HttpURLConnection、HttpClient：
+		使用Java代码请求http接口（controller）。（模拟浏览器请求web(http)服务端）
+
+	1.WebService：框架，axis、cxf
+		基于soap协议，wsdl:ws定义语言，底层通过xml进行通信。所以只要支持xml数据的都可以跨平台互相调用。
+		Web service是一个平台独立的，低耦合的，自包含的、基于可编程的web的应用程序，可使用开放的XML（标准通用标记语言下的一个子集）标准来描述、发布、发现、协调和配置这些应用程序，用于开发分布式的互操作的应用程序
+		
+		URL wsdlUrl = new URL("http://localhost:8080/webservice/ws/web-publish?wsdl");
+        	Service s = Service.create(wsdlUrl, new QName("http://example.webservice.hgx.com/","myService"));
+       		WebServiceInterface hs = s.getPort(new QName("http://example.webservice.hgx.com/","WebServiceImplPort"), WebServiceInterface.class);
+        	int ret = hs.sum(2, 3);
+        	System.out.println(ret);
+		
+		WebService服务端部署
+			soap:webservice协议。
+			wsdl:webservice定义语言。
+			1.在服务类上添加注解@WebService
+			2.使用Endpoint.publish("http://localhost:8989/webservice/validateToken", new LoginTokenValidateImpl());进行部署
+			在浏览器地址栏输入：
+					http://localhost:8989/webservice/validateToken?wsdl
+			如果页面显示webService描述xml则部署成功
+		调用方式：
+			1.通过xml描述（soap协议）需要调用的方法将xml作为参数通过请求webservice服务端进行调用，返回的也是xml
+			URL url = new URL("http://localhost:8080/webservice/ws/web-publish");
+			HttpURLConnection con = (HttpURLConnection)url.openConnection();
+			con.setDoOutput(true);
+			con.setDoInput(true);
+			con.setRequestMethod("POST");// 设置请求方式
+			//请求头设置
+			con.setRequestProperty("content-type", "text/xml;charset=UTF-8");
+			String soap = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:q0=\"http://example.webservice.hgx.com/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" + 
+				"<soapenv:Body> <q0:sum><arg0>1</arg0> <arg1>2</arg1> </q0:sum> </soapenv:Body> </soapenv:Envelope>";
+			//传递参数，请求服务端
+			OutputStream out = con.getOutputStream();
+			out.write(soap.getBytes());
+			out.flush();
+			out.close();
+			//从服务端读取返回结果
+			InputStream is = con.getInputStream();
+			byte[] b = new byte[1024];
+			String result = "";
+			while((is.read(b))!=-1){
+				result += new String(b); 
+			}
+			is.close();
+			con.disconnect();
+			System.out.println(result);
+
+			2.通过命令或eclipse自动生成客户端
+				wsimport  -keep -p com.jdk6.sub -s JavaSrc http://192.168.11.62:8090/rainLogin?wsdl 
+			3.通过：
+			URL wsdlUrl = new URL("http://localhost:8080/webservice/ws/web-publish?wsdl");
+        		Service s = Service.create(wsdlUrl, new QName("http://example.webservice.hgx.com/","myService"));
+       			WebServiceInterface hs = s.getPort(new QName("http://example.webservice.hgx.com/","WebServiceImplPort"), WebServiceInterface.class);
+        		int ret = hs.sum(2, 3);
+        		System.out.println(ret);
+
+	2.Hessian：基于http协议，实际上是一个hessianServlet
+		Hessian是一个轻量级的remoting onhttp工具，使用简单的方法提供了RMI的功能。 相比WebService，Hessian更简单、快捷。采用的是二进制RPC协议，因为采用的是二进制协议，所以它很适合于发送二进制数据（如对对象进行序列化Serializable）。
+		实现hessian的2种方式：
+			1.基于HessianServlet：hessianServlet里面调用你写的接口类，然后将方法返回的结果返回给客户端
+			2.基于springmvc，HessianServiceExporter处理器它是一个springmvc的handler		
+			
+			
+		hessian客户端：通过HessianProxyFactory生成代理类调用对应的方法
+
+	3.http接口（或者restful风格的接口）
+		就是普通的controller,使用HttpUrlConnection或者HttpClient进行连接通信	
+	
+
+	4.Java的spi：类似于spring扫描配置文件创建bean
+		1.所有类实现同一接口
+		2.在resource文件夹下创建“META-INF/services/”文件夹，然后新建文件：文件名为接口的全路径，文件的内容为实现类的全路径，多个换行
+		3.通过ServiceLoader类（默认扫描上面文件夹下的文件）加载配置文件中的类并实例化
+		ServiceLoader.load(MyInterface.class);
+
+	
+	5.quartz(Manager)：任务调度，周期性执行job方法，与Java自带的TimerTask类似。cron表达式：秒 分 时 日 月 周 年，其中年可省略
+
+	6.FTP文件上传/下载、POI（生成excel、word等文件），都是使用第三方jar包
+		FTPClient fpt = new FTPClient();//ftp
+
+		HSSFWorkbook book = new HSSFWorkbook();//poi
+
+	7.服务端分页插件PageHelper：
+		实际是Mybatis的一个拦截器（Interceptor），在mybatis执行sql之前对sql进行改造成分页sql和统计条数的sql
+
+	8.activeMQ：消息队列（中间消息件）JMS:java message service
+		用于多个服务之间的互相通信
+
+		服务A连接消息队列，然后监听队列A是否有新消息，拿到监听到的消息执行对应操作
+
+		服务B连接消息队列，然后向队列A发送消息，让监听队列A的服务去做对应的事情
+
+		队列中的消息是会被消费的，消费了之后就不存在了。
+
+		消息队列一般用于异步处理
+
+		异步：如A发送一个消息，B立马就能收到，就是同步（直接调用receive()接收）。异步是A发送一个消息，B可以在任何时间（连接上了）获取消息然后再处理（通过监听）
+		同步：consumer.receive()同步方式接受信息,如果还没有获取到则会阻塞直到接收到信息  
+		异步：通过Listener监听消息，有消息时执行onMessage(Message message)
+
+		2种机制：
+			1.发布/订阅：publish-subscribe，只要订阅了这个队列的所有人都能得到消息，publish-->topic-->(多个)subscribe
+			2.点对点（队列queue）：producer-consumer,一对一，生产者发送消息到AQueue，消费者从Aqueue得到消息。producer-->queue-->(一个)consumer
+
+	9.web推送：goeasy：原理就是websocket
+		第三方消息订阅goeasy,类似于MQ，只不过此消息队列是用于浏览器与服务器之间的消息推送
+		服务端主动向浏览器进行通信。一般的web项目都是客户端发送请求、服务端响应回去
+
+		原理：服务端将消息发送给goeasy，浏览器通过js监听goeasy是否有新消息
+		
+		一般用于：
+			扫码登陆（使用tomcat的sessionID作为channel）、动态弹幕、新闻订阅（广告）的推送。
+		用法见goeasy官网
+
+	
+	10.nginx：反向代理服务器（分布式/集群，用于多台服务器）,用于处理高并发（短时间大量请求）
+		原理：
+			1.浏览器请求nginx服务器
+			2.装有nginx的服务器接收到请求，然后根据nginx.conf中的配置随机发送给真实服务器去处理
+			3.真实服务器处理完后响应给代理服务器，再通过代理服务器将结果响应给浏览器
+
+			反向代理服务器就只是将请求分发给真实服务器
+		
+		使用：找到nginx下的config文件夹下的nginx.config，并配置。即可
+		客户端请求的是nginx的ip和端口号，但是其他不变，如：
+			http://nginxip:nginx端口号/projectName/user/login?name=2121&pwd=aqdqdqw
+			
+
+	正向代理：
+		代理客户端去请求服务端
+
+	反向代理：代理服务端接收客户端的请求，并把响应结果返回给客户端		
+		正向代理，比如要访问youtube,但是不能直接访问，只能先找个翻墙软件，通过翻墙软件才能访问youtube. 翻墙软件就叫做正向代理。
+		所谓的反向代理，指的是用户要访问youtube,但是youtube悄悄地把这个请求交给x-art来做，那么x-art就是反向代理了。
+
+
+
+	11.redis：非关系型数据库（key-value）、key过期、发布订阅、事务等功能。用C语言开发（C语言是底层语言）
+		redis快的原因：
+			1.纯内存访问，redis将所有数据放在内存中，0 I/O读写
+			2.单线程，避免线程切换和加锁/释放锁带来的消耗，但是单线程也会带来阻塞问题（比如多个写操作，一个在执行时其他则阻塞）
+			 		
+
+		存储String : set name 哈哈
+
+		String、List、Set（无序）、Hash（Object,存储对象）、zset（有序set）
+		
+		用法与其他数据库类似
+		1.连接
+		2.调用方法操作数据库
+		一般用于缓存与spring集成、sso的session共享等（只是一个中间存储工具）
+		mybatis使用Redis作为缓存时，以sql作为key结果作为value存储在Redis中，首先会使用sql去Redis中查询是否存在，如存在则返回结果，不存在则再去数据库中查询，增、删、改操作将会清空缓存
+		
+		使用集群需要考虑session共享问题，因为nginx将请求随机分配到不同的服务器去会生成新的session，每台服务器的session都是不同的。
+		
+		缓存击穿（通过key查询出来的值都是null，相当于缓存层无效）、热点key（访问多的key）、雪崩（当缓存服务挂掉后所有查询都直接查询后台数据库）
+		redis数据是存储在内存中的，所以快
+		
+		缓存问题：	
+			缓存击穿：用户恶意使用 redis中没有的key去请求导致缓存失效直接查询数据库，当并发过高时会导致数据库崩溃
+				解决方法：
+					1.当redis查询到的value为null时，使用redis互斥锁，一个线程进来先得到锁再去操作数据库（没得到锁的线程sleep一段时间再调用此方法），这样解决了数据库高并发问题，但是会导致系统并发不高。相当于排队去操作数据库
+					2.使用布隆过滤器：把redis所有key保存到布隆过滤器中，当有key来查redis时，先在布隆过滤器中判断是否存在这个key，不存在直接返回null，这样省去了查询数据库。
+
+			缓存雪崩：一个时间内大量key过期，导致直接查询数据库。
+				解决方法：
+					1.使用缓存击穿的方法1解决
+					2.设置key的过期时间为随机时间，使过期的key分布不均匀就不会导致数据库并发问题了。
+					3.设置永不过期：
+						1.直接设置永不过期
+						2.在每次查询redis时判断一个key是否快要过期，是的话则开启一个线程异步的去查询数据库再重新设置过期时间，但是此次请求返回的数据是旧值
+			热点key：访问频繁且多的key
+
+		redis实现消息队列：通过其发布订阅模式实现消息队列（类似kafka）
+	
+
+	12.spring boot：spring cloud(微服务)的基础。微服务：一个系统由多个微系统（spring boot项目）组成
+		spring boot：在spring的基础上的一个框架，主要实现spring与组件之间自动配置整合。spring自动配置只需要告诉spring配置类的路径，spring会扫描类上的注解进行配置代替spring.xml配置就行了。
+		spring boot自动配置原理：根据组件(starter)的META-INF文件夹下的spring.factories文件中配置的配置类全路径，通过反射获取starter的配置类上的所有注解，通过spring容器创建bean
+				          通过@ConfigurationProperties(prefix="spring.myproperties")来获取application.properties中的属性，这样就实现了组件(starter)与spring整合
+				          通俗讲：告诉spring boot要去扫描哪个类上的注解创建bean，一般spring创建bean的注解@Bean/@Component即可通过spring创建bean。
+					
+				         spring整合xx组件其实就是通过spring容器来创建组件的bean，可以通过在类上使用@Configuration注解配置来	代替spring.xml的配置				
+	
+		spring boot公共的starter的spring.factories文件在spring-boot-autoconfigure.jar的META-INF下，个人的starter在个人对应的stater.jar的META-INFO下
+			
+		springboot组件：即starter，如dubbo、httpClient、mybatis、redis、freemark等。即springboot与哪些东西整合
+		
+		自定义starter：
+				1.编写获取application.properties文件中属性的类XXXProperties.java
+				2.编写业务类(项目中需要用到的)XXXService.java
+				3.编写自动配置类XXXAutoConfiguration.java通过@Bean注解return一个XXXService对象给spring容器
+				4.关键的一步：在src/main/resource下新建META-INF/spring.factories文件来配置XXX-starter的自动配置类的路径
+					org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+					com.pzr.spring_boot_stater_hello.HelloServiceAutoConfiguration
+				这样springboot就知道要扫描哪个类的注解了，通过反射获取到注解后创建bean再放到spring容器中
+
+			其实starter的配置类与普通的spring项目中的配置类一样，通过@Configuration注解来代替spring.xml配置		
+			
+		springboot多环境配置文件：
+			application.properties——默认加载的配置
+			application-dev.properties——xx环境的配置
+			application-pro.properties——生产配置
+			application-test.properties——测试配置
+
+			不同环境的配置都是由  application.properties加上对应环境的配置组成完整的配置，如果application.properties与环境配置文件出现重复的配置则以环境的配置为准，因为
+			spring boot会先加载application.properties再去加载环境的配置文件
+			
+			不管需要哪个环境的配置文件，spring boot都会加载application.properties配置文件，因为这个配置文件是通用的，当		
+			如果存在bootstrap.properties则会最先加载bootstrap.properties配置文件，因为它的优先级是最高的
+		springboot实现异常统一处理：
+			1.创建自定义异常类
+			2.创建异常处理类，通过@ControllerAdvicer注解即可
+			3.在异常处理类中写异常处理方法，通过@ExceptionHandler(value=XXXException.class)注解在方法上，其中value为要捕获的异常类Class。再使用@ResponseBody注解将异常信息以json格式响应到客户端
+			使用统一异常处理则不需要在代码中try{}catch(Exception e){}。因为需要抛出异常让springboot捕获	
+		
+	13.activiti(工作流)23张表
+		每个节点执行一段代码，节点自动执行。
+		7个服务对象操作工作流（增删改查）
+			repositoryService
+			runtimeService
+			formService
+			identityService
+			taskService
+			historyService
+			managementService
+
+		工作流的作用：
+			减少人为操作，提高业务处理效率，使业务按工作流的流程图执行。
+			流程图的每个节点都是执行一段代码（对数据库增删改查等，还有逻辑判断），当一个节点执行完成会自动到下一个节点。
+
+	14.sso(单点登陆：一个系统登陆，其他关联系统则不需要再次登陆)
+		多个系统共用同一个登陆项目
+		关键：怎样让其他系统知道我已经在登陆系统登陆了？
+			当你登陆之后生成一个token（这个token存储了登陆信息，包括用户id等），并把这个token发送给其他系统，有这个token的系统即表示登陆过
+		需要掌握怎样将登陆过后的消息告诉其他项目（通过回调地址，将参数带给其他项目）
+		回调地址：给其他项目重定向的地址，其他项目在重定向到你给的回调地址时会携带参数，你在你的controller（handler）里得到这些参数即可。
+		回调函数的作用就是获取返回值。比如第三方登陆，第三方支付等都需要回调地址（使用第三方的功能页面时），回调函数这种方式传参可以保证浏览器请求在你的项目中是同一个session。	
+		
+		类似于第三方登陆。			
+
+	15.JSOUP：Java爬虫
+		获取html，然后使用jsoup解析得到想要的数据
+		实际就是获取页面上的数据
+	
+		15.1JSONP：ajax跨域请求
+
+		15.2.GSON：json与Java对象互转工具类，GSON支持从.json文件读取json串，与fastjson一样
+
+	16.前端框架：
+		jqgrid(表格)、jquery（js框架）、jquery图表插件、laydate日期插件、layer弹出层、layui(html页面开发)
+		前端页面框架：已经写好了css。只需要给标签一个规定的class或其他属性即可实现框架的样式
+	
+	18.SVN、Maven、eclipse、GIT的使用
+		SVN：项目版本控制（管理）。用于团队开发，代码共享。当项目有多个阶段时，可以创建分支，每个分支即一个版本；不管是否有冲突都是先更新后提交
+			在eclipse的team===>切换  可以切换到分支
+		maven：项目管理。管理项目所需的外部（jar）包。通过配置pom.xml添加jar包等。Maven 能够管理项目的构建、报告和文档。maven可以将一个项目模块化，即一个项目可以通过maven model分为多个model，且只有一个parent model，其他model通过jar的方式引入主model，如dao、service可以创建为 maven model,然后在web项目中引入，其中dao、service层将会打包成jar
+			使用maven module建springboot项目时，spring boot的parent依赖写在父工程的pom中，因为子 工程已经依赖的父工程的pom。
+			maven的conf目录下又setting.xml配置文件，用来配置本地仓库和远程镜像仓库（mirror），maven在引入依赖<dependency>时先在本地仓库中查找，如果没有找到则从远程仓库中
+			找，找到后会下载到本地仓库，下次就不会从远程仓库下载了。
+			
+		eclipse：开发工具，常用的有clean、update project、build path等
+			maven====>update project
+			configure======>convert to maven project：将项目转为maven项目
+
+		GIT：分布式版本控制工具，与SVN不同，SVN是一个服务端多个客户端连接。GIT是一个远程仓库，多个（多人，每人一个本地仓库）本地仓库。提交代码时先提交到本地仓库
+			再从本地仓库提交到到远程仓库。不能直接提交到远程仓库！！！
+			GIT所有的操作都是先在本地仓库操作，再选择Push才是将本地仓库的文件提交到远程仓库。
+			远程与本地是对应的都有一个相同的仓库。远程有主干master、分支branch，则本地也有主干master和分支branch，想将分支合并到主干上时，先要在本地仓库将本地分支合并到本地主干上 ，再将本地主干提交(push)到远程主干。
+			
+			local		remote
+			主干———提交——>主干
+			分支1———提交—>分支1
+		本地分支1合并到主干——提交———>主干==远程分支1合并到远程主干				
+			
+
+		SVN与GIT的区别：
+			SVN：客户端——>服务端
+			GIT：本地暂存区（clone后的文件夹）——>本地仓库——>远程仓库（服务端）
+			比如在暂存区改了文件后没有提交到本地仓库立马切换到本地另一个分支，则也会出现文件更改提示icon，因为你文件改了但是没提交到本地仓库。
+			
+			Git选择clone后从远程仓库拉取文件，会自动创建一个本地仓库在你clone的文件夹下。
+			clone后的目录为：
+				
+			myproject：
+				.git      这个文件夹是隐藏的，是本地仓库
+				xxxproject	这个就是暂存区，就是clone后在你电脑磁盘上的文件，所以在暂存区点击提交时提交到.git本地仓库，再在此文件上点击push则是将.git本地仓库推送到远程仓库里
+				
+				点击切换分支switch...则.git本地仓库也会切换，只是我们感觉不到
+				第一次切换远程分支需要创建对应的本地分支，一般本地分支名与远程分支名一致比较好对应，不然你乱起名的话都不知道本地分支对应的是远程哪个分支（主干也是一个分支，又叫主分支）
+				切换到哪个本地分支就是将暂存区文件提交到哪个本地分支仓库
+	
+	19.二维码的本质：
+		本质：
+			二维码其实就是一个字符串，生成二维码的过程其实就是将字符串转换为二进制0 1。
+			按照0即二维码白色部分，1为黑色部分将二维码绘制出来。所以说整个二维码其实就是字符串。
+		
+		使用：
+			当扫描二维码时，如果二维码的内容是一般的字符串则直接显示出来，如果字符串是一个网站地址：http://www.baidu.com等则会打开这个地址（请求这个地址）
+		
+		自制二维码：
+			谷歌的QR（Quick Response：中文为快速响应）工具包（jar）可以将字符串转为二维码。
+			利用扫码请求网址的特征，将自己的某个链接地址生成二维码，用户扫描后请求此地址
+
+			如：扫码下载。二维码其实就是一个下载的url。扫码后自动请求下载地址，进行下载
+	
+	20.代理模式：静态代理，动态代理，cglib。代理模式的实现方式：1.实现同一接口，代理类中引用目标类调用目标类的方法；2.代理类继承目标类，代理类调用父类（目标类）的方法
+		代理了解：我帮你完成你想做的事情，但是完成之前或者之后我可以做我自己的事情，如我帮你（代理你）买东西，但是在买东西的路上我可以先睡一觉，买到东西（你的事情已经完成）之后我又可以睡一觉
+		
+		静态代理：需要手动创建代理类。实现同一接口或者继承目标类，重写目标类的所有方法，重写的方法中调用父类方法
+		动态代理：目标类需要实现接口，使用Proxy.newProxyInstance(目标类.class，目标类接口.class，new InvocationHandler(){}：匿名内部类);创建得到代理类对象	
+		cglib：
+
+			1.写一个回调类实现MethodInterceptor接口，重写interceptor方法	
+			2.通过EnHance类创建子类（EnHancer对象即代理类）
+				//1.工具（增强）类（ Enhancer：加强者，即子类）
+        			Enhancer en = new Enhancer();
+        			//2.给工具（增强）类设置父类
+        			en.setSuperclass(target.getClass());
+        			//3.设置回调函数对象
+        			en.setCallback(methodInterceptor);//参数为methodInterceptor对象
+        			//4.创建子类(代理对象)
+        			return en.create();
+				
+	21.任务调度QuartManager,使用cron表达式设置任务周期（秒 分 时 日 月 周 年）（0 * * * * ？*）每到0秒时就执行：1分钟一次
+		任务类implements Job接口 重写execute方法。启动quart时会周期性执行execute方法
+	
+	
+	22.远程调用（RMI）的3种方式
+		1.WebService：soap协议，以xml的数据格式进行通信，只要支持xml的平台都可以跨平台调用
+		2.Hessian远程接口：HTTP协议，服务端是一个特殊的Servlet（HessianServlet）,用于部署接口，客户端通过生成代理类(HessianProxyFactory)进行调用。
+		3.HTTP接口：服务端就是一个Web的Controller(Action),一般返回（响应）json格式数据。客户端通过HttpURLConnection或者HttpClient（模拟浏览器）调用
+		4.restful接口（HTTP接口），基于springmvc。
+		
+	23.协议的作用
+		规范客户端与服务端的数据格式
+
+	24.PageHelper：服务端分页插件
+		mybatis的拦截器，在执行sql之前对sql进行改造。
+		1.在mybatis-config.xml核心配置文件中配置
+			<plugins>
+				<plugin interceptor="com.github.pagehelper.PageHelper">
+					<property name="dialect" value="mysql"/>
+				</plugin>
+			</plugins>
+
+		2.在在代码中查询时
+			PageHelper.startPage(1,20);//1:当前页数，20：一页多少行
+			List<Order> list = service.queryOrders(param);//调用dao层查询,其实执行的是拦截器（PageHelper）。list是分页后的结果
+			PageInfo page = new PageInfo(list);//获取分页信息
+			
+			Map<String,Object> result = new HashMap<String,Object>();
+			result.put("total",page.getTotal());//总条数
+			result.put("cpage",page.getPageNum());//当前页数
+			result.put("pages",page.getPages());//总页数
+			result.put("rows",list);//分页查询结果
+			return result;
+
+	25.设计模式23种
+		常见的设计模式：
+			工厂模式：spring
+			单例模式：private 构造
+			适配器模式：springmvc的处理器适配器
+			过滤器模式：JavaEE 的Filter
+			代理模式：静态代理，动态代理Proxy，Cglib代理Enhancer
+			MVC模式：三层架构MVC
+			前端控制器模式：springmvc的DispatcherServlet（Servlet接收请求），struts2的StrutsPrepareAndExecuteFilter(过滤器接收请求)
+			拦截过滤器模式：拦截器：Interceptor(struts2)，HandlerInterceptor(springmvc)；过滤器：Filter
+			传输对象模式（实体类）：传输对象模式（Transfer Object Pattern）用于从客户端向服务器一次性传递带有多个属性的数据。传输对象也被称为数值对象。传输对象是一个具有 getter/setter 方法的简单的 POJO 类，它是可序列化的，所以它可以通过网络传输。它没有任何的行为。服务器端的业务类通常从数据库读取数据，然后填充 POJO，并把它发送到客户端或按值传递它。对于客户端，传输对象是只读的。客户端可以创建自己的传输对象，并把它传递给服务器，以便一次性更新数据库中的数值。	
+		
+	26.缓存:
+		可以使用redis，也可以使用static的Map  static{map = new HashMap<String,Object>();}
+	
+	27.流媒体服务器：red5
+		类似于tomcat（web服务器），red5也有自己的API编写服务
+
+	28、使用第三方的功能：第三方登陆、第三方支付等，通过回调函数通知使用结果
+		其实就是跳转到第三方的功能页面（html），再用户使用（登陆、支付）后第三方怎么告诉你用户已经登陆、支付了呢？通过回调函数，即第三方服务器在登陆、支付成功后重定向到你给的回调地址，并通过?status=success&user=UWI2323232JU2传参，所以你得专门写一个回调handler（处理器）来接收参数。
+			
+	29、mycat：数据库的读写分离
+		类似于nginx，我们连接的其实是mycat，由mycat接收到sql，如果是select则分配到读的数据库执行，如果是写（insert、update、delete）则分配到写的数据库执行。然后再将数据同步到读的数据库。使用mycat有多台数据库
+	
+	30、atomikos：分布式事务管理主要用于多数据源的事务管理。
+	
+	31、AbstractRoutingDataSource项目多数据源配置：多数据源就是分库分表、读写分离 ，对不同的模块使用不同的数据库不同的表
+		1.配置多个dataSource
+		2.配置分布式事务管理atomikos
+		3.通过继承AbstractRoutingDataSource抽象类，重写抽象方法，然后在mybatis从数据源获取连接对象connection之前切换数据源（在执行mybatis方法之前）
+		
+		使用mybatis的interceptor进行读写分离，在dao方法执行之前拦截，获取sql进行判断是否以select开头，截取sql的数据库（用于切换数据源，如果能获取目标方法的话则获取目标方法的注解 ，然后获取注解中的数据源@DataSource("mysql")），是则切换数据源到读的数据源(read_mysql)，否则切换到写的数据源(writer_mysql)
+
+	32、kafka：分布式消息队列，生产者往topic中生产消息，消费者从topic中消费消息，同一个topic消费者可以分组消费，每组消费者可消费一次。
+		kafka数据丢失：
+			1.生产者问题：生产者没有把数据写到kafka服务中 ，在JavaAPI中可以通过回调函数 确定数据 是否发送到kafka
+			2.消费者问题：丢失的原因：1.可能被其他消费端消费掉了。2.可能消费到了，但是你拿到数据做业务处理时失败了，下次重试就拿不到这条数据了，因为消费是按offset的值来消费的，当消费后offset的值会加1。
+				      因为一个topic中消费时是通过groupid消费的，同一个groupid不能重复消费，导致数据丢失的原因是可能消息已经被其他的项目消费掉了 ，因为别人的groupid跟你的一样。
+				      可以自己记录 主题topic，分区（partition），消费者组groupid，offset的值，然后根据自己记录的offset的值再去消费消息，手动提交(auto.commit.enable=false）这样就算同一个topic下同一个groupid也是不会导致消息被消费而丢失。（offset是记录了当前groupid消费到哪里，下次消费从哪开始 ）
+			3.kafka服务问题：Kafka允许每个broker（服务）的 topic的分区（partition）拥有若干副本（follower）一个leader，这个数量是可以配置的，你可以为每个topic配置副本的数量。Kafka会自动在每个个副本上备份数据，所以当一个节点down掉时数据依然是可用的。
+
+
+		kafka消费端：offset是记录了 topic中一个groupid的消费到了哪里，下次消费从哪里开始
+		
+		kafka的结构：
+			Kafka是一个分布式的、可分区的、可复制的消息系统
+			Kafka将消息以topic为单位进行归纳。
+			将向Kafka topic发布消息的程序成为producers.
+			将预订topics并消费消息的程序成为consumer.
+			Kafka以集群的方式运行，可以由一个或多个服务组成，每个服务叫做一个broker.
+		
+			一个broker下创建的topic有多个分区（partition），一个分区（partition）可以有多个副本（备份）和一个领导者（leader）
+		
+		概念：
+			broker：集群的某个服务
+			topic：主题（某个队列）
+			分区（partition）：一个topic下有多个分区，消息就放在这些分区中（一个分区满了就放在下一个分区），当消费者消费消息时需要用到topic、partition、groupid和 offset
+			leader：主分区，follower：副分区，做备份用的
+			offset：记录了一个消费者的消费数，下次从哪开始消费
+			ack：ack容错机制(应答机制），当生产者发送消息时，服务端的topic的分区和副本都收到 后会通过 回调函数返回确认是否发送成功
+
+		为什么要用消息队列：
+			1.用来传输数据
+			2.数据异步处理，降低服务端（消费端）的并发压力
+			3.用来控制数据处理的数量，解决并发问题。如每次消费消息时只消费10条，这样就可以分批次处理数据了，而不是一次性全部处理导致数据库锁死。
+
+	33、mongodb：文档型数据库，介于关系型与非关系型数据库之间，面向collection的数据库。其存储格式为bson，与json极相似（基本一样），mongodb的一个数据库中的一个collection相当于关系型数据库中的一个表
+		mongodb的一个mongoClient对象就是一个连接池，一个项目最好就创建一个mongoClient对象
+		关系型数据库	数据库	表	行	列 
+		mongodb	数据库	collection  文档        字段
+		写操作MongoDB比传统数据库快的根本原因是Mongo使用的内存映射技术 － 写入数据时候只要在内存里完成就可以返回给应用程序，这样并发量自然就很高。而保存到硬体的操作则在后台异步完成	
+		读操作MongoDB快的原因是： 1）MongoDB的设计要求你常用的数据（working set)可以在内存里装下。这样大部分操作只需要读内存，自然很快。 2）文档性模式设计一般会是的你所需要的数据都相对集中在一起（内存或硬盘），大家知道硬盘读写耗时最多是随机读写所产生的磁头定位时间，数据集中在一起则减少了关系性数据库需要从各个地方去把数据找过来（然后Join）所耗费的随机读时间
+		简单的说,没有join,没有事务,使用内存映射,因此效率高
+		
+		当存储的数据格式（字段）有变动时使用mongoDB能减少数据库表的创建与改动
+
+	33.1、ElasticSearch是一个基于Lucene的搜索服务器，一个ES集群可以包含多个索引index（数据库），每个索引又包含了很多类型type（表），类型中包含了很多文档（行），每个文档使用 JSON 格式存储数据，包含了很多字段（列）。存储格式与mongodb类似 是json
+		关系型数据库	数据库	表	行	列
+		ElasticSearch	索引	类型	文档	字段	
+		使用Java api操作（增删改查）	
+			
+		使用http rest或者Java API进行（增删改查）操作
+		
+	34、dubbo：分布式服务框架，阿里团队使用netty编写。以zookeeper为服务注册中心，其admin管理页面为dubbo服务治理页面
+		dubbo-admin管理页面部署问题：
+			直接将dubbo-admin放到tomcat/webapps/下的话在操作完页面后跳转可能出现404，因为dubbo-admin页面不是基于项目的。
+			解决：在tomcat的config/server.xml的Host标签下添加<Context path="/" docBase="dubbo-admin" reloadable="false" />
+			其中：path为访问时的根路径，docBase为项目文件所在路径，可以基于Host的appBase，加上以上配置后，访问dubbo-admin是不需要项目名的
+		原理：
+			1.服务端将主机ip、端口、接口、实现类注册到zookeeper中，客户端从zookeeper中获取以上信息请求服务端（通过序列化流 ObjectOutputStream），服务端找到对应的方法执行之后将结果对象通过序列化流写到客户端实现远程调用
+			
+			项目结构一般为maven model ，分为consumer（客户端）、api（公共接口和实体类）、provider（服务端）
+			
+			dubbo特点：易上手
+				高性能的代理远程调用
+				智能负载均衡
+				服务自动注册与发现
+				高可扩展
+				运行期流量调度
+				可视化的服务治理与运维
+
+		发布服务：<dubbo:service>
+		引用服务：<dubbo:references>
+	
+	35、springcloud：微服务架构（分布式）与dubbo一样是分布式框架，dubbo效率高，springcloud服务治理方面更详细，使用@eurekaServer作为服务注册中心，@eurekaClient作为服务客户端到eurekaServer中注册，其他eurekaClient可以通过服务注册中心发现服务 并远程调用
+			六个常用组件：在入口类上的注解都是以Enable开头，@EnableDiscoveryClient注解的意义是将服务注册到注册中心，一般组件注解都组合了此注解
+				eureka：服务注册中心,可进行集群配置（两个eureka互相指定注册中心，但是服务名相同）
+					eurekaServer集群：@EnableEurekaServer
+						两个eureka互相指定注册中心，但是服务名相同
+					eurekaClient集群：@EnableEurekaClient
+						服务名相同，注册中心配置时多个使用,隔开
+
+				ribbon：客户端负载均衡（客户端发现调用服务），在入口类中添加@EnableEurekaClient注解(以为ribbon都是使用在服务消费方的)，将服务注册到注册中心，再配置restTemplate到spring容器中   
+					new RestTemplate();来调用服务（RestTemplate是对HttpUrlConnection的封装，因为spring cloud暴露服务是通过http请求调用服务的）
+					@Bean
+					@LoadBalanced
+					public RestTemplate getRestTemplate(){  return new RestTemplate();} 通过spring容器获取restTemplate对象
+				feign：声明式服务调用，本质是Ribbon+Hystrix,在application.properties中配置是否使用hystrix。Feign入口类上的注解为@EnableFeignClients
+					1.写一个interface，在interface上使用@FeignClient("服务名")注解
+					2.写抽象方法，在方法上使用@RequestMapping(value="服务的controller的url",metnod=RequestMethod.GET)注解，在方法参数上使用@RequestParam("服务端参数名")或@RequestBody：对象作为参数（form表单中的json参数）来指定参数
+					3.使用@Autowired注解注入一个interface类型的实例直接调用对应的方法就可以调用服务了。
+					使用了feign可以不使用ribbon和hystrix	
+					使用@RequestBody时，只能使用POST请求，且@RequestBody和@RequestParam不能被继承，也就是说不能写到父类上				
+
+				hystrix：断路器，负责监控服务之间的调用情况，连续多次失败进行熔断保护。当服务之间调用失败 则断路，直接返回调用失败，不再请求服务，过一段时间会重新调用一次看是否能调通
+				zuul：网关路由，用来 路由 哪些请求分配给哪个服务和过滤请求（通过extends ZuulFilter实现配置。接口安全token认证，IP限制等）,入口类上的注解为@EnableZuulProxy
+				config：配置中心，利用git集中管理程序的配置，远程获取配置文件。 @EnableConfigServer 为服务端。  已注册到注册中心的客户端（其他微服务中）直接获取配置文件的值，config可以动态获取配置文件的值@RefreshScope刷新 ，@Value("${name}")取值
+				Turbine：监控服务间的调用和熔断相关指标 @EnableTurbine				
+
+
+			幂等性问题：在网络不好的情况下微服务互相调用时导致重试，但是第一次已经请求过去了，就导致有两次请求
+			解决方案：全局唯一ID，就是根据业务的操作和内容生成一个全局ID，在执行操作前先根据这个全局唯一ID是否存在，来判断这个操作是否已经执行。如果不存在则把全局ID，存储到存储系统中，比如数据库、Redis等。如果存在则表示该方法已经执行。	 
+				类似于重复 提交问题
+
+		表单重复提交解决：先生成一个token并保存到session中，并返回给前端页面，当点击提交时把此token带过去，服务端判断 此token是否存在，存在则表示是第一次提交，不存在则是第二次，则直接返回不执行业务。		
+
+	微服务注册中心的作用：分布式协调程序
+		1.服务端将服务地址注册到(保存)注册中心
+		2.服务注册中心，给客户端提供可供调用的服务列表，客户端在进行远程服务调用时，根据服务列表然后选择服务提供方的服务地址进行服务调用。
+		注册中心会选取可用的(能连接通)的服务返回给客户端。如redis分布式：当一个redis服务不可用时，注册中心会选择另一个可用的redis服务地址给客户端去访问。
+		这就是zookeeper等注册中心的作用
+
+	36、Netty：网络应用开发框架，可以使用netty开发一个服务器 ，可以看成是java中的net（socket）框架
+
+	37、freemark：页面模板，类似jsp，可以动态将数据填写到html页面，然后通过相应流写到浏览器，浏览器再解析渲染HTML页面进行展示，形成动态页面。
+		freemark页面静态化：freemark解析模板文件，再把模板文件的表达式替换成对象中的字段值，再把模板文件写到流里面改变模板文件的后缀。页面静态化需要数据变换少的页面
+
+		1、引入相关jar
+		2、代码：
+	
+			Map<String,Object> model = new HashMap<String,Object>();
+			model.put("name","张三");
+			model.put("age",18);
+			Configure c = new Configure(version);
+			c.loadDirect("WEB-INF/template");//加载模板文件夹
+			Template t = c.getTemplate("xxx.xml");加载模板文件，获取模板对象
+			Writer out = response.getWriter();
+			t.prosses(model,out);
+			out.flush();
+			out.close();
+
+	38、使用freemark到处word文档和pdf
+		1.先将word模板另存为xml格式
+		2.使用freemark将数据替换到 xml模板的freemark表达式中
+		3.将替换后的xml写到响应流中，响应流设置响应内容为下载，文件格式为word的doc格式
+		4.最好使用office生成xml模板，因为wps不兼容其他办公软件，导致导出的word打不开
+		5.将word转为pdf，使用工具类Aspose.Words，百度搜索
+	
+	39、ExtJs：前端HTML框架，使Java开发人员可以快速开发较为好看的HTML页面，其语言是使用js编写，思想很类似Java的GUI，由容器+组件等组成，比如创建一个pannel，pannel中放按钮 button组件等，与Java的GUI都是一样的	
+		ExtJs：与Java swing（GUI）一样，创建Pannel、Button等组件然后将组件放置容器（Pannel）里面，ExtJs会自动布局和给样式，但是ExtJs是基于js的，所以需要导入js、css等文件
+			Ext.create("Ext.pannel.Grid",{
+				width:180,
+				renderTo:Ext.getBody(),//或者  标签的id  ，renderTo:"mydiv"
+			});
+		一个js对象就是一个组件或容器
+
+	40、阿里druid数据源监控配置：
+		1.在spring-mybatis.xml中配置数据源
+
+		2.在web.xml中配置servlet和filter
+			
+		3.通过http://ip:port/projectname/druid访问监控页面
+
+	
+	41、微信小程序、公众号：具体开发查看微信开发文档，https://developers.weixin.qq.com/miniprogram/dev/quickstart/basic/getting-started.html
+		与web一样https请求
+		1.微信小程序页面是在微信里面的，需要开发一个小程序app，然后给微信审核，之后发布作为客户端。
+		2.小程序页面发送请求（通过js、ajax）
+		3.Java服务端接收请求获取数据，然后响应数据回到客户端，客户端拿到数据显示。
+		。。。。做一个与陌生人聊天的小程序。使用websocket(长连接：全双（服务端随时都可以向客户端推送数据）工通信)
+
+	42、lucene：全文检索引擎工具包，但它不是一个完整的全文检索引擎，而是一个全文检索引擎的架构，提供了完整的查询引擎和索引引擎
+			lucene有7个包需要导入：analysis，document，index，queryParser，search，store，util
+			lucene进行分词：将一个字符串分为多个关键字，如 我爱中国，经过IK分词后为：我 我爱 爱中国 中国。经过分词后再将这些关键字作为条件查询数据库得到结果，类似百度的分词搜索。
+					通过MySQL函数replace(name,'我','<font color="red">我</font>');  在HTML页面进行高亮显示，或使用Java替换关键字
+	
+
+	43.flume：日志抽取框架：监听日志文件，当有日志写入文件时，将日志读取到，然后通过事件得到日志消息，获取到日志消息时就可以将日志消息存到想存的任意地方（数据库mongodb等）
+	
+	44.日志提取到kafka：使用log4j+flume+kafka，log4j与flume 整合，flume与kafka整合，（通过配置文件整合），flume中集成有kafka的producer（生产者），可向kafka发送消息
+	
+
+	45.solr：搜索引擎（就是数据库）。shiro：权限框架
+		用于保存数据和查询数据。分为服务端与客户端，一般客户端使用Java连接。solr的core相当于mysql数据库中的某个库
+		实际使用：0.安装solr
+			1.与数据库同步：在数据插入mysql时顺便插入到solr中，修改则更改，删除则删除
+			2.查询数据时查询solr：根据输入的条件生成查询solr的查询参数，可指定 查询哪些属性，是否高亮等。自带将查询条件进行分词再模糊查询指定的字段。
+			SolrQuery params = new SolrQuery(); 
+			// q代表查询条件
+			params.set("q", q); 
+			// 排序 params.addSort("id", SolrQuery.ORDER.desc); 
+			// 分页 params.setStart(page); params.setRows(size); 
+			// 默认域 params.set("df", "text"); 
+			// 只查询指定域 params.set("fl", "id,text"); 
+			// 开启高亮 params.setHighlight(true);
+			// 设置前缀 params.setHighlightSimplePre("<span style='color:red'>"); 
+			// 设置后缀 params.setHighlightSimplePost("</span>"); 
+			// solr数据库是itaem，itaem是solr的一个库
+			QueryResponse queryResponse = client.query("itaem", params); 
+			SolrDocumentList results = queryResponse.getResults(); 
+			// 数量，分页用 
+			long total = results.getNumFound();
+			// 获取高亮显示的结果, 高亮显示的结果和查询结果是分开放的 ，也就是说：查出来的结果分为两份，一个是高亮的，一个是不高亮的。
+			Map<String, Map<String, List<String>>> highlight = queryResponse.getHighlighting(); 
+			Map<String, Object> map = new HashMap<String, Object>(); 
+			map.put("total", total); 
+			map.put("data", highlight);
+		
+
+	46.在集群或分布式架构中跑定时任务：每天定时查询表A的数据保存到表B中，保存成功后删除表A的数据
+		1、保证数据的一致性（同步，表B中只存在唯一一条）
+		2、效率（不重复查询）
+		3、内存不能被占用太多（限制查询条数）
+		可在定时任务中开启另一个定时任务，大范围的定时任务每天一次，小范围的定时任务每分钟执行一次，且小范围的定时任务保证同步，即执行完一次后在执行第二次（使用分页查询数据，为了避免新增的数据对分页的影响，根据插入时间排序，服务器1查询前 500条，服务器而查询后500条，当查询的数据为0条，或时间为0点的时候停止小范围的定时任务）
+		以上思路分析：。。。。行不通。另一个思路：查询后修改A表的以查询出的数据为已查询（表A新增一个字段，是否已查询字段），然后要考虑的是查询后修改是同时发生，即第二台服务器还没查询的时候，第一台查询出的数据已更新为已查询
+			根据不同服务器进行分页查询，保证各个服务器的数据同步（不重复）
+			小范围的定时任务		
+
+	
+	47.snake：与activiti一样，是工作流引擎，但是snake是轻量级工作流引擎。
+
+	48.log4j的日志级别：配置文件中配置的日志 级别将会影响log4j的日志记录，比如log4j.properties中配置的消息级别为info时，使用logger记录日志为logger.debug("debug级别日志记录");将不会记录到日志文件里面
+	
+	50.jpa：Java persistent API,  Java1.5出的一个orm框架，使用注解或xml来配置对象与结果集映射关系
+
+	51.ElasticSearch：Elasticsearch和MongoDB/Redis/Memcache一样，是非关系型数据库。存储json格式数据类似mongodb
+
+	52.docker：沙盒镜像，每个沙盒镜像都相类似一个虚拟机,可以用来当作独立的服务器，即一个正在的服务器linux，里面装有 docker时，docker可以创建沙盒镜像，沙盒镜像又相当于一个虚拟机环境
+	
+	53.vue.js：数据渲染前端框架，主要作用就是将查出的数据渲染到页面。语法：
+			var vm = new Vue({
+        				el: '#vue_det',
+        				data: {
+            					site: "菜鸟教程",
+            					url: "www.runoob.com",
+            					alexa: "10000"
+        				},
+        				methods: {
+            					details: function() {
+                					return  this.site + " - 学的不仅是技术，更是梦想！";
+            					}
+        				}
+    			});
+			取值<input type="text"  value="{{site}}"/>
+			指令：for、if等等
+
+	54.JSONP：ajax跨域
+		JSONP：ajax跨域请求，一般情况下ajax是不允许跨域请求的，如果真需要ajax跨域，则使用JSONP，原理：
+		jsonp：实现ajax跨域
+		普通js实现跨域：页面
+		<%@ page pageEncoding="utf-8" contentType="text/html;charset=UTF-8"  language="java" %>
+  		<html>
+  			<head>
+      			<title>跨域测试</title>
+      		<script src="js/jquery-1.7.2.js"></script>
+     			 <script>
+          			//回调函数
+          			function showData (result) {
+              				var data = JSON.stringify(result); //json对象转成字符串
+             				$("#text").val(data);
+         			}
+ 
+         			$(document).ready(function () {
+             				$("#btn").click(function () {
+                 				//向头部输入一个脚本，该脚本发起一个跨域请求
+                 				$("head").append("<script src='http://localhost:9090/student?callback=showData'><\/script>");
+             				});
+         			});
+     		</script>
+		 </head>
+ 		<body>
+     			<input id="btn" type="button" value="跨域获取数据" />
+     			<textarea id="text" style="width: 400px; height: 100px;"></textarea>
+ 
+ 		</body>
+ 		</html>
+
+		服务端：
+		protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+      			response.setCharacterEncoding("UTF-8");
+      			response.setContentType("text/html;charset=UTF-8");
+  
+      			//数据
+     			 List<Student> studentList = getStudentList();  
+      			JSONArray jsonArray = JSONArray.fromObject(studentList);
+     			String result = jsonArray.toString();
+ 
+    			 //前端传过来的回调函数名称
+     			String callback = request.getParameter("callback");
+     			//用回调函数名称包裹返回数据，这样，返回数据就作为回调函数的参数传回去了
+     			result = callback + "(" + result + ")";
+ 
+     			response.getWriter().write(result);//相当于响应的是一个js
+		 }
+
+		原理：利用script的src跨域请求，服务端响应js，js内容为一个函数。html获取JavaScript会执行js从而执行函数
+	
+
+	55.缓存架构：
+		redis、memcache缓存都是存储在内存中的，CPU读取快速，而从数据库查询则需要通过IO速度慢
+		
+	56.JMS：Java message service，Java消息服务，使用：连接MQ、创建生产者、创建消费者。消息同步：使用receive()方法主动接收消息，异步：使用监听接收消息，当由消息被监听到时则消费消息。
+
+	57.OGNL表达式： OGNL是Object-Graph Navigation Language（对象图导航语言）的缩写，它是一种功能强大的表达式语言，通过简单一致的表达式语法，可以存取对象的任何属性，调用对象的方法，遍历整个对象的结构图，实现字段类型转化等功能、它使用相同的表达式去存取对象的属性。
+
+	58.aspose-word：word转pdf工具包	
+
+	59.springXXL：分布式任务调度中心，在quartz的基础上进行开发出来的有管理页面admin，需要mysql数据库。使用分布式：
+			1.首先下载admin项目部署到本机
+			2.写一个handler，使用@JobHandler("jobhandlername") ,通过admin页面添加此定时任务
+			
+			admin可以管理多个项目的定时任务，所以是分布式的。使用的是 quartz+dubbo封装的
+	
+	60.deepfacelab：AI视频换脸 集成环境
+
+	61.jdk1.8新特性：
+		1.接口interface可以有一个默认的方法（不是抽象方法）
+		2.函数式接口之lambda表达式：(参数1，参数2)->{实现体}   ，lambda表达式  类似  匿名内部类，用来快速实现接口返回实现类对象。像一个匿名方法
+			函数式接口：只有一个抽象方法的接口或抽象类，可以使用lambda表达式快速实现此接口。
+
+	62.Junit：单元测试 
+		1.单元测试模拟工具类EasyMock和PowerMock
+		EasyMock用于简单的模拟，模拟当前测试类的依赖对象的方法（public且非static）
+		PowerMock用于较为复杂的模拟，模拟静态方法。
+
+	63.swagger：Rest接口API文档管理平台，需要与项目继承，通过swagger的页面管理项目中的API（通过注解方式来实现API的描述等）
+		使用：导入swagger.jar，在Controller的handler（@RequestMapping("")）方法上使用注解来描述此API的入参出参等
+			访问swagger的页面即可生成文档
+
+	64.阿里分布式事务：seata与jta（Atomikor）一样
+		
+	65.mysql索引：
+		1.索引的本质就是数据结构，数据结构就是将数据按一定格式存储，mysql索引的数据结构是B+Tree（多路平衡二叉树）
+		2.mysql在查询数据时如何使用索引：先查询索引（索引中存储的是表中数据的磁盘存储地址），在索引中找到对应数据（一行）的存储地址，再通过地址去查找磁盘，所以索引就像是表的目录
+		我们看书想找到哪一章都是先在目录中查找到第几章在书的多少页，然后再去书中找到第多少页，这样就找到想看的章节了。而不是一页一页的翻书，直到找到为止，这样就是全表扫描了，效率非常低。
+
+	66.HanLP：Java分词工具，可将一段字符串进行分词，一般用于中文分词
+
+	67.JWT：JSON WEB TOKEN，用于网络间传递声明而执行一种基于 JSON 的标准。是一种token认证机制。与session不同，session是存在与服务端，客户端有个cookie存着JsessionID，用户登陆后将用户信息存储在session中，
+		这样有个问题，当用户在线数量多时服务端内存将不足，而JWT能解决这一问题：JWT与session相反，将用户数据存储在客户端cookie中，客户端尔后的每次请求都带上这个cookie，服务端获取到cookie后从中获取用户信息。
+		也许你会觉得这样不安全，但是JWT会通过签名来认证这个JWT是不是合法的。JWT本质就是json串
+		
+		JWT的结构：
+        			Header（头部）.Payload（负载）.Signature（签名），通过.来连接
+		JWT适用于：单点登录、API调用认证等，但不适用于敏感数据的校验，如金额、特殊权限等还是需要通过查询数据库来验证是否有权限，而不是直接从JWT中取，防止伪造JWT
+			单点登录通过服务端将JWT串通过cookie共享到不同的域，则其用户访问他域也会携带此cookie，其他服务端也可以获取到此cookie
+		JWT伪造分两种：
+			第一种是客户自己伪造，如把没有的权限添加进去欺骗服务端，这种可以在服务端把重要的权限如系统管理员增删改等通过查询数据库来获取数据进行验证，而不是直接从JWT中获取数据。而不重要的权限，如查看博客，搜索博客等就可以从JWT中获取。
+			第二种就是客户被另一个客户伪造，伪造的客户共享被伪造的客户账号，这种可以在服务端获取客户端IP，设备（电脑）唯一标识来解决。
+		
+		有个疑问：假如有人登陆了系统，生成了session，另外有人知道了此人的sessionid，然后伪造请求取访问服务也是会存在风险的，因为服务端也是通过sessionID来查找session的。这个问题如何解决？
+			其实这样的问题时没办法杜绝的，因为WEB是HTTP协议的，http是无状态的。服务端没办法知道下一个(登录后的)请求和上一个(登录成功的)请求是同一个人，只能使用sessionID验证。
+			就好比：你只有使用钥匙才能进你的房间，锁不会知道是你，就给你开门。当你的钥匙被人盗了，别人一样可以进你的房间，session也是一样的。这是没办法杜绝的，假如有人使用抓包工具抓取到了已经登录的用户的sessionID，他一样能访问你的账号。
+			解决这个问题较好的方法就是服务端获取客户端的一些唯一的信息，如电脑设备，浏览器唯一标识，IP地址能进行验证。当登陆成功后获取这些信息存储在服务端session中，下次请求先获取客户端IP与session中存储的IP进行验证，验证通过再获取session，
+			这样就最大程度确认了每次请求都是由你的电脑发出的，除非别人操作你的电脑，这就是客户的问题了，与服务端无关。也解决了伪造请求的问题了。
+
+
+小知识：
+	
+	tomcat关键目录结构
+		tomcat：
+			bin：一般都是软件程序启动文件所在目录
+				startup.bat    ---启动cmd
+				shutdown.bat  ----关闭cmd
+			config：tomcat配置文件目录
+				context.xml     ----上下文配置文件，指定全局web.xml所在位置
+				server.xml      -----tomcat服务配置文件，配置了tomcat端口号、部署在此tomcat上的项目为：<Context>标签
+				tomcat-users.xml   ----tomcat用户配置
+				web.xml     -----全局的web.xml
+				
+			lib：tomcat运行所需的jar包
+	
+			logs：tomcat运行的日志
+				访问项目的日志
+		
+			temp：临时文件
+				
+			webapps：项目部署目录 
+				myproject：
+					META-INF：maven相关文件
+					WEB-INF：web项目安全文件夹，只能通过服务器内部转发的形式访问里面的资源，不能通过浏览器直接访问
+						classes：类路径，即.class文件目录，也就是classpath的路径
+						lib：项目jar包路径
+						web.xml   -----项目的web.xml，用于配置项目的三大组件等    listener 、filter、 servlet
+					项目其他目录
+			work：tomcat工作时生成的文件，项目中的如jsp转.java再编译成.class等文件
+			
+
+	1.classpath:  实际是WEB-INF/classes文件夹，即类路径。maven项目中的sources文件夹下的文件在项目部署到tomcat后就是存放在WEB-INF/classes
+		
+	2.web.xml中的配置     tomcat启动时会解析web.xml
+	<context-param>
+		<param-name>key</param-name>
+		<param-value>哈哈</param-value>
+	</context-param>	
+	
+	<!--配置web项目的唯一key，当一个tomcat中存在多个web项目时，需要使用以下配置区分不同的项目-->
+	<context-param> <param-name>webAppRootKey</param-name> <param-value>sociality.root</param-value> </context-param> 
+
+	存在于application对象中，可以通过servletContext.getInitParameter("key")获取
+	request.getSession().getServletContext().getInitParameter("key");
+		
+
+	3.jquery、layer等前端框架的函数的参数都是json对象，如：
+		$.ajax({
+			type:"post",
+			url:"aa/bb",
+			data:{a:"aa",b:"bb"},
+			dataType:"json",
+			success:function(data){
+				
+			}
+		});
+	函数ajax();里面的参数{}就是一个json对象
+
+	4.js的对象、数组操作
+		var obj = {};//创建一个对象
+		var obj2 = new Object();//创建一个对象
+		obj.name="张三";//给对象一个属性，并给属性设置值
+		obj.age=18;//给对象一个属性，并给属性设置值	
+
+
+		var array = [];//创建一个数组，这个数组可以添加任何内容
+		array.push(obj);//将对象添加到数组
+		array.push(1);
+		array[0];//取值
+	
+
+	5.linux下部署项目，推荐工具winscp
+		1.将项目打成war包
+		2.切换到tomcat的webapps目录，将war包放到此目录下
+		3.切换到tomcat的bin目录执行startup.sh文件，命令： sh startup.sh
+		4.查看日志，切换到tomcat的logs目录查看当前日志，命令： tail -f catalina.out    其中catalina.out为日志文件名
+		
+		如果tomcat正在运行中则需要先停掉tomcat
+		1.切换打bin目录下执行shutdown.sh文件，命令：sh shutdown.sh
+		2.查看服务进程（不需要切换目录） 命令：ps -ef|grep tomcat  看到如下内容则表示进程在运行中，需要杀掉进程
+		tomcat   24487     1  0 Mar26 ?        00:00:00 /bin/sh /usr/local/tomcat/tomcat8082/bin/catalina.sh start 
+		3.杀掉进程
+		kill -9 24487    其中24487是进程id，可以在步骤2中看到   kill是杀进程命令   -9是杀进程的类型（方式）	
+	
+	6.windows命令连接ftp并上传下载文件
+		1.打开windows命令窗口，操作：键盘上的win键+R，输入ftp，然后确定
+		2.连接ftp服务器，命令：open 10.7.254.71
+		3.输入账号
+		4.输入密码
+		5.查看目录下的文件，命令：ls
+		切换ftp服务器的目录：
+			cd ../ 到上一层目录（文件夹）
+			cd ./ 当前文件夹
+			cd ./ftp/test
+
+		pwd：查看当前目录    如：“ftp/test”
+		6.找到需要上传的文件所在目录,并切换命令。命令 lcd D:\anzhuanglujing
+		7.上传文件，命令：put xxx.jpg
+		8.下载文件，命令：get aaa.jpg
+		9.关闭连接，命令：close
+		10.切换磁盘，  D:       切换到D盘
+
+	7.判断某个ip是否能连接通，一般在接口调用时拒绝连接时使用(cmd)
+		连接指定ip：ping 10.7.254.71
+		查看本机的ip配置：ipconfig 
+		
+		判断某个端口是否能连通：telnet ip port   如 telnet 127.0.0.1 80
+		
+	8.协议的种类
+		TCP：TCP（Transmission Control Protocol 传输控制协议）是一种面向连接的、可靠的、基于字节流的传输层通信协议。需要双方连接后才能通信
+		UDP：UDP 是User Datagram Protocol的简称， 中文名是用户数据报协议，是OSI（Open System Interconnection，开放式系统互联） 参考模型中一种无连接的传输层协议，提供面向事务的简单不可靠信息传送服务。不需要连接，只需要知道它的ip就能传输数据，但是无法保证对方能够接收到
+		HTTP：超文本传输协议，用于传输html	，底层协议是TCP协议
+	 	HTTPS：在HTTP的基础上套上了一层安全协议SSL，并对传输的数据加密
+		FTP：ftp协议（文件传输协议）
+		浏览器与Tomcat就是TCP协议，底层使用Socket/ServerSocket
+		
+	本地项目中需要跳转到其他项目请在href=""中加http://或https://   不然跳转的域还是本地项目
+
+	9.<![CDATA[字符串]]>，在XML中使用<：小于号时将其反转义为字符串，不然则会把<当成标签的开始
+		字符串处理：<![CDATA[<=]]>,把<当成字符串	
+	
+	10.本机访问本机可以使用ip:127.0.0.1或localhost，但是不同计算机之间的访问必须用真实ip
+
+	11.ftp的访问
+		ftp和http都可以在浏览器地址栏输入，也可以在文件夹的地址栏输入进行访问
+		类似http://ip:port/project   http://127.0.0.1:8080/myproject/user/login	
+		ftp访问：ftp://127.0.0.1:21
+		在文件夹上输入地址会自动打开浏览器 
+
+	12.CPU核心数：创建线程数：假设CPU是N核，则设置为2N个工作线程就可以把CPU充分利用起来，让CPU跑到N*100%。总核心数*2=线程数
+		每个手机或电脑都是一个CPU，一个CPU上可包含多个核心处理器，即核心数
+		4核：一个CPU上有4个核心处理器
+
+		处理线程的能力：cpu数量*一个CPU的核心处理器数（每个核心处理器相当于一个人，4核就是4个人，用线程的话就是4个人分别做一个事情，多个线程就是多个任务）
+		当只有1个核心处理器时，即一个人处理多个任务，三心二意的做一下这个任务（没完成）又做另外一个任务，然后又回来接着做上一个任务。
+
+
+	13.ip与端口号（port）
+		ip：代表了某个计算机，与人的身份证一样，一个身份证号即代表一个人
+		port：端口号，取值范围：0-25536。代表了计算机中的应用（软件）
+			127.0.0.1:8080即访问ip为127.0.0.1的计算机端口号为8080的程序
+
+	14 *.txt就是文本文件，里面的内容是字符串
+	FileOutputStream out = new FileOutputStream("test.txt");
+	out.write("ssssssssssssss".getBytes());
+	则test.txt的内容就是：sssssssssssssssssss
+
+	15 WEB-INF文件夹是安全文件夹，WEB-INF下的资源（所有）不能够直接访问(在浏览器地址栏直接输入、重定向、a标签、)，必须经过服务器内部转发request.getRequestDispatcher("WEB-INF/index.jsp").forward(req,resp);//请求一个handler（或者叫action、controller）来转发到WEB-INF下面的资源。
+
+	16 web并发的处理
+		web并发：短时间内有大量请求
+		处理：使用集群处理请求，nginx反向代理服务器，nginx接收请求然后平均分配给真实服务器（多台服务器来处理请求，涉及session共享问题，可以使用redis进行共享session）
+		redis共享session：把需要存在session中的数据存到redis中，生成一个自己sessionid给redis作为key，并把sessionid通过cookie写到浏览器。然后集群的多台服务器从redis中通过key（sessionid）得到session
+		
+
+	17. a标签可以通过href调用js：
+		<a href="javascript:alert('哈哈');">点击执行JavaScript</a>
+		<a href="javascript:test();}">点击</a>
+		function test(){alert("哈哈");}
+
+	18 抓包工具：类似于浏览器的调试模式，用于抓取请求---响应的数据。工具：Fiddler	
+	
+	19.SDK与API
+		API：我们提供的某个接口
+		SDK：多个API接口总汇，相当于一个工具类，用来调用API的
+
+
+	20.springIOC随时随地获取HttpServletRequest对象，只需要在web.xml中配置
+		<listener>      
+       		 	<listener-class>      
+           		 org.springframework.web.context.request.RequestContextListener  
+        		</listener-class>      
+		</listener> 
+
+		使用@Autowired HttpServlretRequest request;注入
+		原理：将request对象绑定在当前线程中，以当前线程为key，request为值存储	
+
+
+	21、将图片或文件的字节数组转码后变为String串再存到数据库里
+		File f = new File("");
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		
+		try {
+			FileInputStream is = new FileInputStream(f);
+			byte[] b = new byte[1024];
+			int n;
+			while((n=is.read(b))!=-1){
+				baos.write(b,0,n);//从0开始，n个长度
+				baos.flush();
+			}
+			is.close();
+			byte[] bs = baos.toByteArray();
+			String fileStr = BASE64.encoder(bs);//得到编码后的字符串，之后存到数据库，取出来时再解密得到字节数组
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	22、HTML标签<img />将图片显示，src可以是图片地址http://localhost:8080/projectname/img/jpg   也可以是图片字节码的base64加密后的String字符串  src="data:image/jpeg;base64"+base64img
+	
+	23.将本机 IP  127.0.0.1映射为类似域名www.xxx.com形式，只在本机上有效。找到hosts文件，新增ip映射  127.0.0.1  www.myip.com，保存后即可使用www.myip.com访问本机
+ 	
+	24.Java可以执行cmd命令
+
+	25.word的图片是字节码的base64
+
+	26.实体类的属性取决于getter/setter方法，而不是成员变量，当实体类转为json时也是根据getter/setter方法生成对应的json属性的，跟成员变量无关,即使没有成员变量但是 有getter/setter方法一样有这个属性，如 getName()  则这个属性为name
+		public class TestVo{
+			private String name;//成员变量
+			
+			public void setName(String name){
+				this.name = name;
+			}
+
+			public String getName(){//属性
+				return name;
+			}
+		}
+	
+	27.纵表，即关系型数据库shiykey-value形式存一条记录：多行数据属于某个用户，一行数据存一个属性，这样方便扩张，这也是非关系型数据库的优势，可扩展性强，可以存储任意格式的数据，只要是json就行，不管字段的多少
+		dataid     key       value     userid
+		1             name       张三      1000
+		2              age         18         1000	   
+	
+
+	28.请求与响应过程：
+		浏览器发送请求时会把网站的cookie和请求头参数等等数据发送到服务端
+		服务端响应时，先把响应正文发送到浏览器，再将 响应头信息发送到浏览器，最终完成响应
+
+	29.Java异常处理，当一个方法没有处理(try{}catch(Exception e){})时，当报错后会 抛出异常对象   throw  new Exception("xxx错误");   且方法也会在出错的位置停止，因为异常就是在出错的地方抛出的，throw也有return的效果，终止方法
+		所以 ，当什么时候需要处理(try{}catch(Exception e){})呢，一般是在有循环的时候，因为循环是在重复做某事，不能因为某次循环出错而导致整个循环停止，所以需要处理异常，捕获异常，即使出错也不会影响下次循环
+		
+		如果这个异常给系统（jvm）处理，第一可能会终止程序运行；第二软件的健壮性不能保证，即报错后需要在catch(Exception e){}块中做一些操作，比如提示用户输入了非法字符，将异常记录到日志等操作。 
+	   	获取异常信息不要用e.getMessage();因为有些异常可能没有message
+	 	使用ExceptionUtils.getFullStackTrace(e);获取异常能将异常所有信息获取到
+
+		验证输入的日期格式是否正确时便可 利用DateFormat的parse方法报错来验证输入格式是否 正确
+		try{
+			DateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			fmt.parse("88888-22-66");//抛异常时表示格式错误，无法解析	
+		}catch(Exception e){	
+			System.out.print("日期格式有误");
+		}
+		 
+		
+	30.线程的使用：1.线程一般用来提高效率（CPU使用率），2.当某个代码中有阻塞式代码或死循环时也需要使用线程处理，这样就不会影响其他代码执行，阻塞式：当满足条件时执行，否则一直等待。想想当一个项目执行到一个死循环代码时，如果不用线程则一直在执行循环，其他代码将无法被执行，这样整个项目的其他功能都会作废(停止执行)。
+			尤其是当 项目启动时执行某个死循环时，会导致项目都启不来，因为一直在跑死循环，其他代码都不会执行
+	
+	31.配置文件中的**与*的区别，**是包含多层目录，而*是一层，**只能代替目录，而*可以指文件
+	
+	32.集群时master：主机，brokers：从机
+
+	33.js的debugger;可以在浏览器进入调试模式时进入断点，即debugger就是一个js断点
+		console.log("");//在浏览器控制台输出
+
+		如：function test(){
+			var a = "a";
+			debugger;//断点
+			var b = "b";
+			console.log(a);//在浏览器的控制台输出
+		}
+
+		当在浏览器按 F12时，进入调试模式，执行到此方法后会进入断点
+	
+	34.System.out.println("abcdefg"); 当使用cmd运行Java时会输出abcdefg
+
+	35.java调用windows的cmd并执行cmd命令，即Java可以操作系统，所以Java也可以操作任何外接设备
+
+	36.一个端口号就是一个服务（服务端），因为只有服务端才需要开端口号  ServerSocket ss = new ServerSocket(8888);
+
+	37.xss攻击注入：
+		因为网站链接可能是从百度搜索的，导致访问的链接不正常：
+		正常：http://www.vulnerable.site/welcome.html?name=Joe
+		不正常：http://www.vulnerable.site/welcome.html?name=<script>alert(document.cookie)</script>
+		当使用不正常的网址访问时，jsp取值name到是一个js函数，js函数在客户端可能做任何事情
+		
+		可能出现XSS的地方，用户可控参数回显到页面
+		如关键字搜索回显关键字
+		用户可控参数：用户输入的参数或可修改的参数		
+		
+		
+		危害：
+		通过document.cookie盗取cookie
+		使用js或css破坏页面正常的结构与样式
+		流量劫持（通过访问某段具有window.location.href定位到其他页面）
+		Dos攻击：利用合理的客户端请求来占用过多的服务器资源，从而使合法用户无法得到服务器响应。
+		利用iframe、frame、XMLHttpRequest或上述Flash等方式，以（被攻击）用户的身份执行一些管理动作，或执行一些一般的如发微博、加好友、发私信等操作。
+		利用可被攻击的域受到其他域信任的特点，以受信任来源的身份请求一些平时不允许的操作，如进行不当的投票活动
+	
+		解决方案：	
+			1.将js进行转义  如<script>alert("ss")</script>中的<和>转为实体标签：  $gt  script &lt
+			2.以javascript:开头的参数，javascript不区分大小写，因为html是不区分大小写的
+			
+
+	38.cmd运行可运行的jar：进入jar所在的目录，执行命令 java -jar xxx.jar
+
+	39.基本类型转 String ：
+		1. String s =  5+"";
+		2. String s =new String(5);
+		3. String s = String.valueOf(5);
+
+	40.订单号生成规则：随机数+年月日+时间戳+自增长
+	
+	41.钓鱼网站：模仿真是网站，让用户输入账号密码等
+
+	42.js调用函数与传入函数对象的区别：js加载到哪里就会执行到哪里，边加载边执行，函数名+()就是调用，函数名就是函数对象，当需要传入函数对象却传成函数名+()则此函数在传入时就会被执行
+		<html>
+  			<head>
+  			<title>标题</title>
+  			</head>
+  			<body>
+  			<div id="clock"></div>
+  			<script>
+				var intervalId;
+  			</script>
+  
+  			<input type="button" onclick="window.clearInterval(intervalId)" value="停止计时" />//绑定事件时可以直接执行js    如 javascript: alert("ss");  代表执行js ：alert()；
+  
+			<script>
+				window.setInterval(test,1000);//传入函数对象，每隔1000ms执行一次test函数
+				window.setInterval(test(),1000);//test带了()，所以是调用test函数，只会执行一次setInterval()无效，所以 使用setInterval()时，函数不能 有参数
+				alert("abc");//在使用setInterval时会先执行alert();不会出现死循环的情况，setInterval应该是用了线程
+				function test(){
+					document.getElementById("clock").innerHTML=new Date();
+				}
+			</script>
+  		</body>
+  		</html> 
+	
+	
+	43.获取项目中的文件路径：LoadSpring.class.getClassLoader().getResource("config/spring.xml").getPath()
+
+	
+	44.一般框架中需要的配置文件的路径都使用classpath:开头，表示WEB-INF/classes/
+
+	45.内置tomcat的使用：
+		1.导入jar
+		2. Tomcat t= new Tomcat();
+
+	46.如何保证接口安全：
+		通过在请求头header中添加签名sign进行认证，在服务端对请求进行认证。一般sign是由时间+接口对应的固定编码（只能告诉允许被调接口的人）+用户ID等。
+		
+		1.token令牌认证
+		2.IP限制
+
+	47.当数据库涉及到金额等字段时，实体类中对应的属性类型应为BigDecimal类型，因为使用double和float都会损失精度
+
+	48.http接口：普通的web项目就是一个http接口，像Servlet等都是http接口。所以接口写起来容易，但是治理起来比较难，所以为什么微服务不使用普通的web项目作为接口，而是使用spring cloud
+		因为spring cloud有服务注册中心，服务注册中心就是用来管理接口服务的
+
+
+	49.return只能作用于所在的方法，抛出异常时也会终止方法，就是说throw与return类似，只不过throw抛出的是异常
+
+常见的异常和错误：
+
+	1.tomcat启动失败：LifecycleException
+		java.util.concurrent.ExecutionException: org.apache.catalina.LifecycleException: Failed to start component [StandardEngine[Catalina].StandardHost[localhost].StandardContext[/webmsgtuisong]]
+		Failed to start component：组件启动失败，web项目的三大组件：servlet、filter、listener
+		一般都是web.xml配置有问题，请检查web.xml配置
+
+	2.js报错可能影响报错位置后面的代码
+
+	3.服务器启动失败，多半是框架配置文件有错，或者web.xml配置有错，但是如果是Failed to start component （组件启动失败）则是web.xml配置有错。
+
+	4.反射的作用：如果不用反射，我们创建对象只能手动创建 new Object(); 但是有了反射之后可以动态创建对象和调用方法、访问对象的属性等操作，所谓动态即以变量的形式存在。反射创建对象：
+			我只需要传一个类的全路径 Class.forName("com.hgx.project.test.MyObject");即可创建一个对象调用方法等 。而字符串可以随意变化，所创建的对象也可以根据 字符串变化，而不是写死在代码里，甚至可以在页面或数据库配置要创建的类的对象。
+			1.动态创建对象，调用方法、属性等
+			2.使代码更加灵活
+
+	5.js导入<script type="text/jaavscript"></script>不支持单标签，否则导入报错，js报错也会类似Java的 抛异常一样结束方法		
+		css导入：<link  src="" rel="" style="" />		
+
+	6.mybatis报NoSuchMethod com.hgx.projectname.test.dao.ITestDao<init>一般是实体类（不是dao接口的问题，而是resultType的问题）因为没有无参构造函数导致的，因为mybatis封装实体类使用反射来创建实体类需要的是无参的构造函数
+
+	7.sql包含关键字时，需要使用`` 来将关键字反转义，否则报错  select `status` from tablename; 
+
+	8.当使用request.getRequestDispatcher("/WEB-INF/classes/xx.xls").forward(request,response);进行下载时，转发的xx.xls找不到时浏览器会报无法连接，无法访问此网站
+	总结：使用内部转发时资源找不到不是报404，而是直接无法访问此网站（当项目没启动，或启动失败时才会出现的情况）。
+		因为当下载，转发找不到资源时，Tomcat无法响应给浏览器，就相当于访问超时，即无法访问。
+
+	9.读内存比读磁盘效率快
+专业术语：
+	oop：面向对象编程
+	aop：spring的面向切面编程，可以看成是方法拦截器
+	ioc：spring的依赖注入，在spring容器中的bean都可以互相注入到属性中
+	orm：object relation mapping，对象关系映射，dao层框架思想，用于实体类与数据库表字段的映射，从而将执行sql查询出的结果集封装成实体类
+	http：web通信协议，无状态协议，底层是TCP协议的net编程。短连接，即连接后完成一次请求——响应便断开，下次再重新连接。所谓的协议就是通信时必须传指定格式的请求头，响应头
+	soap：webService协议，可跨平台调用
+	SOA：业务服务化架构，即把一个业务模块作为一个服务（项目），用于分布式系统
+	RPC：remote procedure call，远程过程调用，即远程方法调用，常用的有dubbo、hessian、Thrift和Java的RMI（远程方法调用），RPC使用的是长连接,也是一种通信协议，http是无状态连接（请求——响应一次就断开）
+		RPC主要用于公司内部的服务调用，性能消耗低，传输效率高，服务治理方便。HTTP主要用于对外的异构环境，浏览器接口调用，APP接口调用，第三方接口调用等。
+		RPC优缺点：
+			优点：提高系统可用性（一个服务挂了 不影响其他服务），提高系统整体性能（将系统的业务分给多台机器处理），服务治理方便（一般都有服务注册中心和管理页面）
+			缺点：基于远程调用，单方面性能降低
+	json：js objetc，js对象  {"key":"value"}
+	jpa：Java Persistence API（Java 持久层 API）：用于对象持久化的 API
+	jta：java transaction api，Java事务API
+	架构：是一种思想
+	框架：对底层的封装，是真实存在的
+	一般 ：j，就是Java的意思   A就是API
+
+	分布式与集群的区别：
+		分布式：一个项目分割成多个微小的服务（一般根据模块分），多个服务组成一个项目，分布式：kafka、redis等使用的是分布式，虽然有多个kafka，但是每台服务保存的topic（分区）数据不同。
+		集群：多台服务器上部署相同的项目
+	
+面试题：
+	Long i = 10l;
+	Long j = 10L;//存在常量池中
+	Long k = new Long(10);//在堆区
+	System.out.println(i==j);//true
+	System.out.println(i==k);//false
+	直接定义基本类型是先在常量池中查找是否存在这个常量，如果不存在则创建一个，存在则直接引用已存在的
+	通过new则是创建对象，存在于堆区
+	
+	2、表连接where与on的区别：
+		where是表连接后对生成的临时表做条件 筛选
+		on是对参与连接的表做单独条件筛选，对筛选后的结果再进行连接
+
+	3、实体类的属性只与其getter/setter方法有关，与成员变量无关，而且将实体类转为json时生成的json属性也至只与getter/setter方法有关，所以只改成员变量名而不改getter/setter方法将会导致json生成有误这样的错觉
+
+	4.类不写构造函数，默认有一个隐藏的无参构造函数，但是如果（手动）写了构造函数则不会存在默认的无参构造函数，只有写的那个构造函数
+
+	5.构造函数的作用是对对象进行初始化，不是创建对象， Object obj = new Object();     new才是创建对象   Object()只是调用构造函数，给对象进行初始化
+		构造代码块 ：{} 对所有对象进行相同初始化，在创建对象时执行，优先于构造函数执行.每创建一个对象就会执行一次
+
+	6.静态代码块：static{}     随着 类的加载而加载（当类被第一次使用时加载），且优先于 main方法执行，且只会执行一次，所以一般用来做一些初始化的事情，如获取配置文件properties中的值等，有多个static{}则按类加载顺序执行
+
+	7.类变量、类方法：即静态变量、静态方法，使用类名来调用（访问），一般的方法需要对象才能调用，静态方法则基于类的，不需要指定调用对象
+
+	8.访问权限符： public（公共的,同一项目中都可以调用） 、default（默认、友好的，同包下可访问）、protected（受保护的，子类可访问）、private（私有的，本类中可访问）
+
+	9.内存分析：基本类型存在与栈区，引用类型存在于堆区，变量名存在于栈区，如   Object obj = new Object();   obj存在于栈区  然后指向堆区的 new的Object()；类对象
+
+	10.Object类是所有类的父类，包括自定义的类
+	
+	11.标识符：即变量命   ，定义规则：只能包含数字、字母 、下划线、美元符号$   且数字不能开头 （加入数字 开头则虚拟机无法区分是 变量还是变量名，如 int 2=2;   而字母可以 开头是因为 字符串是用双引号""括起来的，所以可以 区分变量名和变量 String s = "s";）
+	
+	12.重写与重载的区别：重写需要有继承关系，是对父类的方法进行重写；重载是在同一个类中有多个方法名相同但参数类型、数量、顺序不同（为了区分不同方法）的方法
+
+	13.switch(n){  case 0: .... ;break;   default :  ...; break; }  n可以是short、int、char、enum、String
+
+	14.子类构造函数的第一行代码是super();//即父类构造函数，因为先有父类才有子类。子类构造函数中的调用父类构造函数代码一般情况下是省略的，但是如果父类构造函数只有有参的则必须显式调用
+		public class Test extends MyClass{
+			public Test(){
+				super();
+			}
+		} 
+		子类中调用父类的关键字为super     如调用父类方法super.method();
+		
+	15.垃圾回收：GC，garbage collection
+		Java采用可达性分析算法来判定一个对象是否死期已到，对象都有一个状态（可达、不可达），当对象的状态为可达状态时虚拟机会将此对象进行回收
+		手动回收垃圾：System.gc();//将状态为可达的对象都进行回收
+		finalize()：finalize()是Object中的方法，当垃圾回收器将要回收对象所占内存之前被调用，即当一个对象被虚拟机宣告死亡时会先调用它finalize()方法，让此对象处理它生前的最后事情（这个对象可以趁这个时机挣脱死亡的命运）
+
+	16.java关键字
+
+	17.事务的4个特性：原子性、一致性、隔离性、持久性
+
+	18.局部变量必须要有初始值，而成员变量可以不写，因为成员变量不写初始值时有默认的初始值，而局部变量则没有
+	
+	19.String的==与equals区别：
+		因为String重写了父类Object的equals方法，String的equals比较的是内容是否相同，==比较的是地址（是否为同一对象）。Object的equals方法返回的就是==的结果
+	
+	20.如果不指定类型，整型数字默认是int，小数默认是double.
+		double a = 1/3;//结果为0，因为1是 int型，3也是int型，1/3也是int型，舍去小数部分就是0再转为double型
+
+	21.千万级数据处理：插入 、修改使用 mybatis的foreach：
+		首先在数据库url链接上加入：&allowMultiQueries=true（允许一次执行多条sql，注意这里是&而不是&amp）
+		<update id="update" parameterType="java.util.List">
+			<!--collection的值可以为array、或对象属性或list-->
+        			<foreach collection="list" separator=";" item="i" index="index" >
+           				 update d1_1
+            			<set>
+                			result=#{i.result}
+            			</set>
+                			where id=#{i.id}
+        			</foreach>
+    		</update>
+		虽然是多条sql但是数据库连接只连接了一次 ，所以效率还是高了很多
+		千万级数据查询使用分页，但是mysql在大数据量时分页效率也会越往后的页数查询越慢
+	
+
+	22.大数据文件的读取：边读边写，因为IO流读取 文件时是一次只读取一部分数据的，不是一次性把文件全部加载到内存，所以每次读取一点数据然后再对数据进行操作。
+		InputStreamReader read = new InputStreamReader(new FileInputStream(file), encoding);//IO连接文件 考虑到编码格式
+                	BufferedReader bufferedReader = new BufferedReader(read);
+                	String lineTxt = null;
+
+                	while ((lineTxt = bufferedReader.readLine()) != null){//读取文件内容，一次读取一行
+                    		save(lineTxt);//将读取出来的一行进行保存
+                	}
+		read.close();
+                	bufferedReader.close();
+                	
+	23.两根不均匀的香，燃烧 都需要一小时，怎么判断过了15分分钟：
+		将一根香的两端 点燃 ，燃烧需要30分钟
+		将另一根香一端点燃，当第一根香燃烧完后再将第二根香的另一端点燃则得到15分钟
+
+	24.腾水问题：一个6升的水杯和一个5升的水杯要量出3升水？
+			1.将6升水杯装满水，倒入5升的被子中倒满为止，则6升的水杯中剩余1升水，将5升水杯的水倒掉，将6升水杯的1升水倒入5升水杯中
+			2.将6升水杯装满水，再倒入 5升水杯中（5升水杯中有1升水），倒满为止，则6升水杯中剩余2升水，再把5升水杯中的水倒掉，将6升水杯中的2升水倒入5升水杯
+			3.重复以上步骤得到3升水
+
+	25.递归求n!，return n*fn(n-1); 就等于 return n*(n-1)*(n-2)......*1 
+	public static int m(int n){
+		if(n>0){
+			System.out.println(n);
+			System.out.println("*");
+			return n*m(n-1);
+		}else{
+			System.out.println("1");
+			return 1;
+		}
+	}
+			
+	26.工厂模式：解耦和，通过工厂类来创建对象，有简单工厂模式、一般工厂模式、静态工厂模式、抽象工厂模式
+
+	27.乐观锁和悲观锁     锁：即将事务锁住
+		乐观锁：乐观锁是首先假设多个事务不会出现冲突，只有在数据提交修改的时候才进行校验，如果冲突了则不会进行更新（更新失败，然后代码中通过更新标识判断是否更新成功）通过版本号字段（每更新一次版本号字段+1）实现乐观锁
+			其底层机制是这样：在数据库内部update同一行的时候是不允许并发的，即数据库每次执行一条update语句时会获取被update行的写锁，直到这一行被成功更新后才释放。因此在业务操作进行前获取需要锁的数据的当前版本号，然后实际更新数据时再次对比版本号确认与之前获取的相同，并更新版本号，即可确认这之间没有发生并发的修改。如果更新失败即可认为老版本的数据已经被并发修改掉而不存在了，此时认为获取锁失败，需要回滚整个业务操作并可根据需要重试整个过程。
+		
+		悲观所：假设任何事务都会出现冲突。当一个事务锁定了一些数据之后，只有当当前锁提交了事务，释放了锁，其他事务才能获得锁并执行操作。（不能用于多线程高并发，会导致数据库锁死）
+			当数据库执行select for update时会获取被select中的数据行的行锁，因此其他并发执行的select for update如果试图选中同一行则会发生排斥（需要等待行锁被释放），因此达到锁的效果。select for update获取的行锁会在当前事务结束时自动释放，因此必须在事务中使用。
+			使用方法：
+				select id, total, front, end from price where id=1 for update insert into price values(?,?,?,?,?)
+				当被select出来的这一行数据执行事务提交后下一次事务才会执行，只锁了一行数据。
+
+	28.hashcode：对象相等则hashCode一定相等； hashCode相等对象未必相等。是比较地址是否相等，JAVA中声明变量都是引用嘛，不同的引用，可能指向同一个地址。Object的equals与==一致。String的equals重写了Object的equals，比较的是内容
+	
+	29.spring声明式事务原理：spring事务由两种方式：1声明式事务；2注解事务<tx:annotation-driven />
+		通过aop将事务切入到方法中（环绕） public void a(){}    public void b(){a();} ，当a中有事务b没事务时,则调用b方法是没事务的，因为事务切入在a方法上，只有a有事务
+	
+
+	30.数据库表连接on与where的区别，on是在两表连接后做关联关系，where是在on做完关联关系后得到的结果集再对此结果集进行条件查询。
+		在left  join   时on条件是在生成临时表时使用的条件，它不管on中的条件是否为真，都会返回左边表中的记录
+		where条件是在临时表生成好后，再对临时表进行过滤的条件。这时已经没有left join的含义（必须返回左边表的记录）了，条件不为真的就全部过滤掉。
+		区别就在于左连接、右连接、全连接时有区别
+
+	31.查出每门课程都大于80分的学生：思路，先查出有一门课小于80的学生的id，再找出学生ID不在这些小于80分的学生Id中的学生，去重。使用not in 或使用not exists
+		select distinct studentname from student where student_id not in(select student_id from student where score<=80 )
+
+编码规范：
+	1.类名首字母大写，变量名使用驼峰命名首字母小写
+
+	2.使用框架时，框架的约定优于框架的配置，因为配置会使框架去加载执行更多的代码，而约定则使用框架默认的配置执行
+
+	3.开闭原则：对于扩展是开放的，对于修改是关闭的
