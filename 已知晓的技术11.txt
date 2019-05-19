@@ -138,12 +138,18 @@
 				1.隐式加载：比如直接 new XXXObject()也是先由类加载器去加载后得到类对应的Class对象再去newInstance的
 				2.显式加载：如XXXObject.class.getClassLoader().loadClass("");或者Class.forName("");
 				3.ClassLoader.loadClass()与Class.forName()的区别：
-					ClassLoader.loadClass()只是把类加载到JVM中，并不会对类进行初始化，即不会执行static{}和静态方法
+					ClassLoader.loadClass()只是把类加载到JVM中，并不会对类进行初始化，即不会执行static{}，static{}在第一次创建对象new时执行 
 					Clss.forName()内部也是调用ClassLoader来实现类加载的
 					但是Class.forName();有两个重载的方法，一个Class.forName("xxx.XXClass")和Class.forName(String className, boolean initialize,ClassLoader loader);
 					Class.forName("xxx.XXClass")是默认对类进行初始化的，而Class.forName(String className, boolean initialize,ClassLoader loader);是在类加载时可选择是否对类进行初始化
-					Class.forName(String name)会执行static{}和public static 方法，所以为什么使用Class.forName("jdbc.mysql.DriverClass")来加载数据库驱动，因为加载后会对驱动类进行初始化
-
+					Class.forName(String name)会执行static{}，所以为什么使用Class.forName("jdbc.mysql.DriverClass")来加载数据库驱动，因为加载后会对驱动类进行初始化
+				
+				
+				static{}是对类进行初始化，构造代码块{}对对象进行默认初始化。构造方法public 类名(){}是对某个对象进行初始化，执行顺序：
+					static{}：在第一次new 对象时执行，且只执行一次，优先于{}
+					{}：在创建对象时执行,且每次new都会执行，优先于构造方法
+					public 类名(){}：在new时执行，执行顺序最低
+				
 		基本类型与引用类型（对象）的区别：
 			1.基本类型存在栈区，引用类型存在堆区
 			2.在作为方法的实参时，局部基本类型不能传递到其他方法中进行修改，因为基本类型作为实参传递到方法中，方法会重新创建一个基本类型副本来操作，而不是操作原来的基本类型变量。而局部引用类型可
