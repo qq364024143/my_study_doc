@@ -473,7 +473,7 @@
 		层叠样式表(英文全称：Cascading Style Sheets)是一种用来表现HTML（标准通用标记语言的一个应用）或XML（标准通用标记语言的一个子集）等文件样式的计算机语言
 		css框架：bootstrap，引入bootstrap的样式css、js等，只需要在标签中定义class、id等属性。原理：bootstrap已经对不同的class写好了不同的样式
 
-	三、js(javascript)
+	三、js(javascript)：打断点可以使用debugger;在js代码处   或者 直接使用浏览器调试打断点
 		基于事件、面向对象的一门语言，与Java无关，但是语法与Java非常相似
 		弱类型的语言：所有对象可以由var接收   var a = {};//对象
 		但是也可以分类：
@@ -599,7 +599,7 @@
 			SAXReader reader = new SAXReader();
 			reader.read(new File(""));
 	
-	八、ajax
+	八、ajax：ajax存在跨域问题，而使用form直接提交可以跨域提交，因为form提交后响应回来的数据浏览器认为是一个页面，而ajax响应回来的数据只是数据，认为可以执行当前页面的js所以认为不安全，不能实现跨域。
 		异步的js and xml
 		原生的js：
 			var xhr = new XMLHttpRequest();
@@ -1038,7 +1038,7 @@
 
 			7、PROPAGATION_NESTED：如果当前存在事务，则在嵌套事务内执行。如果当前没有事务，则执行与PROPAGATION_REQUIRED类似的操作。
 
-		aop：所谓"切面"，简单说就是那些与业务无关，却为业务模块所共同调用的逻辑或责任封装起来，便于减少系统的重复代码，降低模块之间的耦合度，并有利于未来的可操作性和可维护性。		
+		aop：所谓"切面"，简单说就是那些与业务无关，却为业务模块所共同调用的逻辑或责任封装起来，便于减少系统的重复代码，降低模块之间的耦合度，并有利于未来的可操作性和可维护性。如日志记录、spring的事务，方法调用权限校验等。		
 			相关对象  JoinPoint(前置、后置)、ProceedingJoinPoint（环绕）
 
 			切面类的定义：一个普通的类：
@@ -2306,6 +2306,31 @@
 
 			服务端API也需要使用细粒度权限控制，细到每个uri都能控制访问
 
+	68.POI：实现Java代码对Microsoft Office读写功能，主要有word、excel、power point（PPT）等操作，在项目中使用最多的是excel。
+		每种类型的文档都有两种方式实现：
+		方式1、直接使用POI的API手动创建文档以及文档内容
+			如	HSSFWorkbook book = new HSSFWorkbook();
+		方式2、使用模板语言如freemark，具体操作为：原理类似web中html页面模板的数据渲染
+			1.先使用office新建一个文件，把文档具体的内容和样式创建好。如新建一个word.doc，然后在里面编辑内容和样式作为一个word模板
+			2.将文件另存为2003.xml类型的文件，生成一个xml文件
+			3.将生成的xml文件使用模板语言的表达式进行数据渲染，如遍历数据<#list>#{item.name}</#list>、<#if>#{name}</#if>等逻辑和取值，就像操作jsp一样把查出来的数据填在模板上
+			4.通过模板语言的API将文件输出（通过IO写）到磁盘或响应到客户端。注意输出的使用文件 后缀为.doc或.docx而不是.xml了。因为word于xml是可以互转的。
+			如：
+				//模拟查询数据，为k,v格式，对象也行
+				Map<String,Object> datas = new HashMap<String,Object>();
+				datas.put("name","张三");//模板中使用#{name}获取值
+				OutputStream out = new FileOutputStream("xxx/xxx/myword.doc");//注意输出时的文件后缀为xxx.doc，而不是xml
+				Configuration conf = new Configuration();
+				conf.setClassForTemplateLoading(this.getClass(), "/template/");模板存放路径
+				Template template = conf.getTemplate("myword.xml");//获取模板
+				template.setOutputEncoding("UTF-8");
+				template.process(datas,out);//datas为查出的数据，out为输出流
+				out.flush();
+				out.close();//注意流使用 后要关闭，不然可能出现文件导出后格式损坏，因为字节没有完全输出。
+				这样就把word生成好了。
+
+		将word转为PDF文件：使用aspose，这是一个收费的工具，提供了相关的API来转换文件和操作文档类型doc文件等。
+			
 小知识：
 	
 	tomcat关键目录结构
