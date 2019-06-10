@@ -170,6 +170,16 @@
 
 		局部变量是没有默认值的，所以在定义时必须要赋一个默认值进行初始化，否则报错
 
+		转型：向上转型，即小范围的对象可以自动像大范围(父类)的类转型；向下转型，只能通过强转，将大范围的对象转为小范围的类型，但是如果对象实际所属的类型并不是强转后的类型则报错，String str =（String）obj;
+		instanceof关键字可以判断对象是否属于某个类型  obj instanceof String 返回 true或false		
+
+		
+		泛型方法：根据返回值确定返回类型，返回值是什么类型则返回值就是什么类型   <T> T
+			 public <T> T find(String keyword){
+				return "";
+			}		
+
+
 	第四章：异常（Exception）
 		继承Exception类，通过构造函数调用父类的构造将已成信息传递过去
 		try{}catch(Exception e){}finally{}
@@ -212,7 +222,7 @@
 			HashMap:线程不安全,键可以为null，key重复会覆盖原来的value,每次put时都会判断是否key已有相同的存在，存在则将新 value覆盖旧value
 			HashTable:线程安全，键不能为null
 			TreeMap:用于排序，效率高
-			HashMap的主干是一个Entry数组。Entry是HashMap的基本组成单元，每一个Entry包含一个key-value键值对。
+			HashMap的主干是一个Entry数组。Entry是HashMap的基本组成单元，每一个Entry包含一个key-value键值对，还有一个next属性作为指向链表的下一个元素。
 			简单来说，HashMap由数组+链表组成的，数组是HashMap的主体，链表则是主要为了解决哈希冲突而存在的，如果定位到的数组位置不含链表（当前entry的next指向null）,
 			那么对于查找，添加等操作很快，仅需一次寻址即可；如果定位到的数组包含链表，对于添加操作，其时间复杂度为O(n)，首先遍历链表，存在即覆盖，否则新增；
 			对于查找操作来讲，仍需遍历链表，然后通过key对象的equals方法逐一比对查找。所以，性能考虑，HashMap中的链表出现越少，性能才会越好。
@@ -250,6 +260,8 @@
 		CopyOnWriteArrayList提供高效地读取操作，使用在读多写少的场景。CopyOnWriteArrayList读取操作不用加锁，且是安全的；写操作时，先copy一份原有数据数组，再对复制数据进行写入操作，最后将复制数据替换原有数据，从而保证写操作不影响读操作。相当于读写分离
 		
 		list.remove();会报错，因为原来的迭代器长度被改变与现在的不等而.next()方法中会验证。 iterator.remove()不会报错，因为remove时将原来的长度改为了现在的长度，还是相等，next（)方法验证通过
+		
+		链表：什么是什么他妈的什么链表
 
 	第七章：IO（流）
 		InputStream/OutputStream
@@ -457,18 +469,18 @@
 		\S：字母
 		多一个\是反转义
 
-2.Java EE（web）
+2.Java EE（web）	三大组件：Servlet、Filter、Listener
 	
 	Http协议：
 		1.POST请求携带的参数类型一般为3种：
 			即header的Content-type属性值：	
-				1.application/x-www-form-urlencoded  这是html的form表单提交的数据
+				1.application/x-www-form-urlencoded  这是html的form表单提交的数据？//待验证 
 				2.multipart/form-data  form表单提交文件的数据
 				3.application/json  一般是ajax提交json数据的类型
 
-		2.GET请求没有Content-type属性的
+		2.GET请求的Content-type属性为application/x-www-form-urlencoded
 
-	一、HTML
+	一、HTML	像js、css只能使用GET方式获取
 		超文本标记语言
 		定义页面元素   <input type="" name="" value=""/>
 		<base href="${pageContext.request.contextPath }/">  
@@ -573,6 +585,10 @@
 
 		注意：在body中动态追加<script>不能直接$("body").append("<script src='xxx.js'></script>");会把<script src='xxx.js'></script>当成是一个外部的js引入，因为<script src='xxx.js'></script>可以写在任何地方
 		需要使用$('body').append('<script'+'></'+'script>'); 
+
+		js：抛异常：try{ ... }catch(e){ ... }
+
+		js判断类型：obj typeof Number
 
 	四、HTMLDOM
 		html页面的文档树，由标签元素组成，类似于Java的对象，每个标签都是一个标签对象
@@ -911,8 +927,8 @@
 		可以设置自己的类型转换器 <mvc:annotation-driven><类型转换器></类型转换器></mvc:annotation-driven>
 		
 		常用注解：@GetMapping()，PostMapping()：即RequestMapping(method=RequestMethod.GET)
-			1.@RequestMapping("url")：使用在方法上时表示这个方法就是一个handler
-			2.@ResponseBody：表示此handler将返回json数据。不需要进行json转换，只需返回对象即可
+			1.@RequestMapping("url")：使用在方法上时表示这个方法就是一个handler，有属性consumer：指定接受类型（application/json） procedure：指定返回类型（application/json）
+			2.@ResponseBody：表示此handler将返回json数据。不需要进行json转换，只需返回对象即可。post请求才能使用RequestBody接收参数，而且参数是json类型
 			3.@RequestParam("")：此注解用在方法的参数上，将request中的参数注入方法的参数上
 			4.@PostConstruct：此注解用在方法上，当spring创建了此方法所在类的bean后会立马执行一次有此注解的方法，一般用来在项目启动时做一些事情,在spring加载完后执行
 			4.@PathVariable("key")：此注解为截取请求的url中的通配符部分的值注入到方法的参数上。一般用在restful中
@@ -1001,7 +1017,7 @@
 				//ids为a,b
 			}
 
-	spring:IOC、AOP     IOC：只有由spring创建的对象（即在spring IOC容器中的对象）才能互相依赖注入
+	spring:IOC、AOP     IOC：只有由spring创建的对象（即在spring IOC容器中的对象）才能互相依赖注入。源码：主要看refresh()方法
 			spring在启动时解析.xml配置文件和扫描各个类的spring注解，然后通过 容器创建bean
 			spring是业务逻辑层和其他各层的松耦合的一个框架
 		IOC由2部分组成：
@@ -1088,6 +1104,8 @@
 			context.getBean(com.hgx.spring_aop.TargetClass.class).targetMethod();
 		
 		常用注解：@Component、@Bean、@Configuration、@Controller、@Service、@Repository、@Autowired、@transactional、@PropertySource:加载properties文件，propertyPlaceHolderConfig类的注解形式 、@Value("${name}")：获取 配置文件的值、@PostConstruct：创建bean后执行有此注解的方法
+	
+		spring常用工具类：BeanUtils、CollectionUtils、StringUtils，一般用来判断是否为空等操作。还有BeanMap也是常用的		
 
 	mybatis：解析mapper.xml获取方法对应的sql，自动创建代理类执行sql,并封装数据，生成代理实现类。
 		原理：1.扫描mapper配置文件，每个select、delete、update、insert、标签都会创建一个mapperStatement对象与其id绑定
@@ -1173,7 +1191,8 @@
 　　　　				open ：前缀
 　　　　				close ：后缀
 　　　　				separator ：分隔符，表示迭代时每个元素之间以什么分隔
-
+			
+			mybatis也可以执行ddl语句：如create table tablename(  字段名  类型  约束 ,字段名  类型  约束);   所以 使用Java代码就可以创建表
 
 
 	spring的bean由spring创建。springmvc的bean由springmvc创建。spring与springmvc是两个不同的容器，所以相关的配置需要具体到对应的配置文件中
@@ -1364,6 +1383,23 @@
 			得到的结果是一样的
 
 			select * from user where binary user_name='abc'; --binary   是让字段区分大小写
+
+		mysql存在时update，不存在时insert操作：两种方法都需要建立唯一索引（一般使用主键，因为主键本身就会建立唯一索引）
+			方法1、replace  into tablename() values();//当存在则替换（先删除，再插入），否则直接插入
+			方法2、使用 on duplicate key update ....
+				insert into tablename () values() on duplicate key update 字段=value,字段=value,
+
+		oracle存在时更新，不存在则插入：使用 marge into ，不仅可以实现存在更新不存在插入，还可以执行delete操作，主要的意思就是合并。这样可以使用sql直接写一些逻辑，类似存储过程
+			 MERGE INTO A_MERGE A USING (dual) C ON (A.id=#{AID})
+
+			WHEN MATCHED THEN
+
+			UPDATE SET A.YEAR=#{name}
+
+			WHEN NOT MATCHED THEN
+
+ 			INSERT(A.ID,A.NAME,A.YEAR) VALUES(#{AID},#{name},#{year}); 
+		
 	5.常用函数：
 		
 		count(1)：统计
@@ -1517,7 +1553,15 @@
 					如果不需要去重，union all 代替union，因为union会去重
 					where代替having，即先条件再分组。
 					尽量用 join 代替子查询。子查询慢是因为每查出一行都会查询整个子表，而使用多表连接则直接从连接的临时表 查询，相当于单表查询，只是在表连接时比较慢
-	
+				
+					使用mybatis批量操作（如 in 、union、exists等），减少数据库连接次数，因为每次执行sql都会先编译sql，检查sql语法，然后再执行sql，这样太耗时。
+					而存储过程（procedure）则在创建过程中就编译好了，执行时直接执行
+					使用mybatis批量处理：1、可减少数据库连接次数；2、减少sql编译次数与验证次数。而且有些操作如insert与update结合使用一次连接
+					<update id="xxx"><!--多个sql语句使用;分开，这也是为什么要是有预处理sql防止sql注入风险的原因-->
+						insert into tablename (xx,xxxx) values('xx','xxx'); update tablename set xxx='xx' where keyid='xx' 
+					</update>
+					
+
 	数据库连接池JDBCPool:顾名思义，存放数据库连接对象Connection的池子，先创建一些连接对象存放到池子里面，当需要且有连接对象空闲时拿来使用，避免了重复创建和关闭，减少了对数据库的连接。
 				如果不使用连接池，则每次需要对数据库操作时都要去连接数据库（创建数据库连接对象），操作完后关闭连接（销毁连接对象），这样效率很低，且对数据库的压力很大。		
 	
@@ -1530,6 +1574,7 @@
 		MySQL索引类型：普通索引、唯一索引、全文索引、主键索引、单列索引、多列索引
 		CREATE INDEX index_name ON table_name (column_list)
 		全文检索  使用 select * from tablename   where match(title,text) against('key1 key2' with boolean model)进行检索，一般用在博客搜索等。注意：有多少个字段建立了全文检索就要匹配多少个字段，不然嫂sql报错
+		使用数字建立索引比uuid索引要高效		
 
 	当数据存在时修改数据的sql：需要有唯一索引(或主键索引)，一般是其他字段的唯一索引
 		insert into tablename(name,age)values ('张三',18)  ON DUPLICATE KEY UPDATE c=c+1;      DUPLICATE ：重复的
@@ -1783,7 +1828,7 @@
 			application-pro.properties——生产配置
 			application-test.properties——测试配置
 
-			不同环境的配置都是由  application.properties加上对应环境的配置组成完整的配置，如果application.properties与环境配置文件出现重复的配置则以环境的配置为准，因为
+			不同环境的配置都是由  application.properties加上对应环境的配置组成完整的配置，如果application.properties与环境配置文件出现重复的配置则以环境的配置为准（后加载的覆盖先加载的），因为
 			spring boot会先加载application.properties再去加载环境的配置文件
 			
 			不管需要哪个环境的配置文件，spring boot都会加载application.properties配置文件，因为这个配置文件是通用的，当		
@@ -1793,7 +1838,16 @@
 			2.创建异常处理类，通过@ControllerAdvicer注解即可
 			3.在异常处理类中写异常处理方法，通过@ExceptionHandler(value=XXXException.class)注解在方法上，其中value为要捕获的异常类Class。再使用@ResponseBody注解将异常信息以json格式响应到客户端
 			使用统一异常处理则不需要在代码中try{}catch(Exception e){}。因为需要抛出异常让springboot捕获	
+
+		常用的页面模板：thymeleaf（默认）、valocity、freemark等，一般不使用jsp，因为jsp需要web容器支持，当使用内置tomcat时，需要导入相关包来支持jsp
 		
+		springboot使用web三大组件：
+			方法1：直接使用注解@WebServlet、@WebFilter、@WebListener
+			方法2：使用spring boot的ServletRegistrationBean 、FilterRegistrationBean 、ServletListenerRegistrationBean注册
+
+			注意：使用注解或使用spring boot注册，组件类都需要extends HttpServlet或实现Filter接口才能是servlet或Filter，与在web.xml配置是一样的	
+
+
 	13.activiti(工作流)23张表
 		每个节点执行一段代码，节点自动执行。
 		7个服务对象操作工作流（增删改查）
@@ -1808,6 +1862,16 @@
 		工作流的作用：
 			减少人为操作，提高业务处理效率，使业务按工作流的流程图执行。
 			流程图的每个节点都是执行一段代码（对数据库增删改查等，还有逻辑判断），当一个节点执行完成会自动到下一个节点。
+		
+		流程：
+			1.部署流程图
+			2.前端下单，创建一个流程实例
+			3.业务节点配置业务类（业务类需要实现JavaDelegate类，，在业务节点上配置此类，当流程执行到此节点就会执行此类的execute方法）
+			4.人工节点：页面请求服务端执行完业务后使用taskService完成任务即可，流程将会往下走。人工节点会等待任务完成
+			5.流程变量：流程变量在一整个流程实例中都有效，在任意任务节点都可以获取到此流程变量。类似session作用域。流程变量一般存储业务相关的数据
+			6.条件分支节点：在流程连接线配置流程条件，控制流程所走的分支，如：a==1则走yes否则a!=1则走no分支		
+
+		工作流与规则引擎（drools）类似，都是控制业务流程
 
 	14.sso(单点登陆：一个系统登陆，其他关联系统则不需要再次登陆)
 		多个系统共用同一个登陆项目
@@ -1850,7 +1914,7 @@
 			
 			local		remote
 			主干———提交——>主干
-			分支1———提交—>分支1
+			分支1——提交———>分支1
 		本地分支1合并到主干——提交———>主干==远程分支1合并到远程主干				
 			
 
@@ -2077,6 +2141,7 @@
 		2.服务注册中心，给客户端提供可供调用的服务列表，客户端在进行远程服务调用时，根据服务列表然后选择服务提供方的服务地址进行服务调用。
 		注册中心会选取可用的(能连接通)的服务返回给客户端。如redis分布式：当一个redis服务不可用时，注册中心会选择另一个可用的redis服务地址给客户端去访问。
 		这就是zookeeper等注册中心的作用
+	在项目为微服务时，需要将公共的东西使用maven module抽取出来，方便复用（作为jar引入即可），如eurekaclien的RequestMapping接口、实体类等
 
 	36、Netty：网络应用开发框架，可以使用netty开发一个服务器 ，可以看成是java中的net（socket）框架
 
@@ -2487,6 +2552,8 @@
 		ip：代表了某个计算机，与人的身份证一样，一个身份证号即代表一个人
 		port：端口号，取值范围：0-25536。代表了计算机中的应用（软件）
 			127.0.0.1:8080即访问ip为127.0.0.1的计算机端口号为8080的程序
+		
+		域名==ip:port
 
 	14 *.txt就是文本文件，里面的内容是字符串
 	FileOutputStream out = new FileOutputStream("test.txt");
@@ -2699,6 +2766,10 @@
 
 	49.return只能作用于所在的方法，抛出异常时也会终止方法，就是说throw与return类似，只不过throw抛出的是异常
 
+	50.使用http://localhost:8080/projectname/url?name=1&name=2相当于传了一个数组String[] name={"1","2"}
+	
+	51.响应式HTML：一套html适应多个硬件：PC、平板、手机等
+	
 常见的异常和错误：
 
 	1.tomcat启动失败：LifecycleException
@@ -2875,7 +2946,7 @@
 	28.hashcode：对象相等则hashCode一定相等； hashCode相等对象未必相等。是比较地址是否相等，JAVA中声明变量都是引用嘛，不同的引用，可能指向同一个地址。Object的equals与==一致。String的equals重写了Object的equals，比较的是内容
 	
 	29.spring声明式事务原理：spring事务由两种方式：1声明式事务；2注解事务<tx:annotation-driven />
-		通过aop将事务切入到方法中（环绕） public void a(){}    public void b(){a();} ，当a中有事务b没事务时,则调用b方法是没事务的，因为事务切入在a方法上，只有a有事务
+		通过aop将事务切入到方法中（环绕） public void a(){}    public void b(){a();} ，当a中有事务b没事务时,则调用b方法是没事务的，因为事务切入在a方法上，当执行到a()方法时开启事务，只有a有事务
 	
 
 	30.数据库表连接on与where的区别，on是在两表连接后做关联关系，where是在on做完关联关系后得到的结果集再对此结果集进行条件查询。
@@ -2883,11 +2954,11 @@
 		where条件是在临时表生成好后，再对临时表进行过滤的条件。这时已经没有left join的含义（必须返回左边表的记录）了，条件不为真的就全部过滤掉。
 		区别就在于左连接、右连接、全连接时有区别
 
-	31.查出每门课程都大于80分的学生：思路，先查出有一门课小于80的学生的id，再找出学生ID不在这些小于80分的学生Id中的学生，去重。使用not in 或使用not exists
+	31.查出每门课程都大于80分的学生：思路（逆向思维），先查出有一门课小于80的学生的id，再找出学生ID不在这些小于80分的学生Id中的学生，去重。使用not in 或使用not exists
 		select distinct studentname from student where student_id not in(select student_id from student where score<=80 )
 
 编码规范：
-	1.类名首字母大写，变量名使用驼峰命名首字母小写
+	1.类名首字母大写，变量名使用驼峰命名首字母小写，常量全部大写且多个单词使用_分开
 
 	2.使用框架时，框架的约定优于框架的配置，因为配置会使框架去加载执行更多的代码，而约定则使用框架默认的配置执行
 
@@ -2896,5 +2967,11 @@
 	4.当一个主业务方法（Service方法）需要对数据进行多个逻辑处理，逻辑代码过多时需要将逻辑代码封装成private方法，再在主业务方法中引用，而不是全部逻辑都在主业务方法中写，这样看起来代码很乱
 		
 	5.魔鬼数字：直接用数字表示状态，如setStatus(1); 这样别人看到1不知道是什么，需要使用枚举或常量接口定义常量再使用，并注释其 代表的意思
-
 	
+	6.判断：使用"xx".euqals(obj)， 5==i；而不是obj.equals("xx")和i==5
+
+	7.方法参数不应超过5个，超过则需要使用实体类封装
+
+	8.JavaBean编写规范：主要是getter/setter方法，因为类的属性只与getter/setter方法有关
+
+	                                                                                                   
