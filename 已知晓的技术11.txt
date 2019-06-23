@@ -1830,6 +1830,11 @@
 
 			不同环境的配置都是由  application.properties加上对应环境的配置组成完整的配置，如果application.properties与环境配置文件出现重复的配置则以环境的配置为准（后加载的覆盖先加载的），因为
 			spring boot会先加载application.properties再去加载环境的配置文件
+
+			spring boot加载配置文件顺序：
+				1、bootstrap.properties     自动加载
+				2、application.properties    自动加载
+				3、application-xx.properties   需要使用@PropertySource或者在application.properties中配置才会加载
 			
 			不管需要哪个环境的配置文件，spring boot都会加载application.properties配置文件，因为这个配置文件是通用的，当		
 			如果存在bootstrap.properties则会最先加载bootstrap.properties配置文件，因为它的优先级是最高的
@@ -1845,8 +1850,9 @@
 			方法1：直接使用注解@WebServlet、@WebFilter、@WebListener
 			方法2：使用spring boot的ServletRegistrationBean 、FilterRegistrationBean 、ServletListenerRegistrationBean注册
 
-			注意：使用注解或使用spring boot注册，组件类都需要extends HttpServlet或实现Filter接口才能是servlet或Filter，与在web.xml配置是一样的	
-
+			注意：使用注解或使用spring boot注册，组件类都需要extends HttpServlet或实现Filter接口才能是servlet或Filter，与在web.xml配置是一样的
+	
+		常用注解：除了spring有的注解外，还有@SpringBootApplication、@ImportResource（导入spring.xml）、@PropertySource（导入.properties配置文件）、@Configuration、@Bean、@ConfigurationProperties（读取application.properties的属性注入到实体类中）
 
 	13.activiti(工作流)23张表
 		每个节点执行一段代码，节点自动执行。
@@ -1889,7 +1895,7 @@
 	
 		15.1JSONP：ajax跨域请求
 
-		15.2.GSON：json与Java对象互转工具类，GSON支持从.json文件读取json串，与fastjson一样
+		15.2.GSON：json与Java对象互转工具类，GSON支持从.json文件读取json串再转换为Java对象，与fastjson一样
 
 	16.前端框架：
 		jqgrid(表格)、jquery（js框架）、jquery图表插件、laydate日期插件、layer弹出层、layui(html页面开发)
@@ -1917,6 +1923,7 @@
 			分支1——提交———>分支1
 		本地分支1合并到主干——提交———>主干==远程分支1合并到远程主干				
 			
+			fork：创建项目分支到自己的git仓库（将其他人的git项目复制到自己的git仓库中）
 
 		SVN与GIT的区别：
 			SVN：客户端——>服务端
@@ -2189,7 +2196,8 @@
 		与web一样https请求
 		1.微信小程序页面是在微信里面的，需要开发一个小程序app，然后给微信审核，之后发布作为客户端。
 		2.小程序页面发送请求（通过js、ajax）
-		3.Java服务端接收请求获取数据，然后响应数据回到客户端，客户端拿到数据显示。
+		3.Java服务端接收请求获取数据，然后响应数据回到客户端，客户端拿到数据显示（渲染）。
+		4.微信小程序相当于前后端分离开发web项目
 		。。。。做一个与陌生人聊天的小程序。使用websocket(长连接：全双（服务端随时都可以向客户端推送数据）工通信)
 
 	42、lucene：全文检索引擎工具包，但它不是一个完整的全文检索引擎，而是一个全文检索引擎的架构，提供了完整的查询引擎和索引引擎
@@ -2339,7 +2347,17 @@
 	61.jdk1.8新特性：
 		1.接口interface可以有一个默认的方法（不是抽象方法）
 		2.函数式接口之lambda表达式：(参数1，参数2)->{实现体}   ，lambda表达式  类似  匿名内部类，用来快速实现接口返回实现类对象。像一个匿名方法
-			函数式接口：只有一个抽象方法的接口或抽象类，可以使用lambda表达式快速实现此接口。
+			函数式接口：只有一个抽象方法的接口或抽象类，可以使用lambda表达式快速实现此接口，并返回一个对象。
+
+		静态方法的调用：
+			类名::方法名
+
+		getter方法的调用：
+			对象::getName
+
+		遍历：
+			lists.forEach((item)->{  .... });
+		
 
 	62.Junit：单元测试 
 		1.单元测试模拟工具类EasyMock和PowerMock
@@ -2770,6 +2788,14 @@
 	
 	51.响应式HTML：一套html适应多个硬件：PC、平板、手机等
 	
+	52、map里面put一个map自己，得到的结果就是自引用：
+		Map<String,Object> map = new HashMap<String,Object>();
+		map.put("name", "小黑");
+		map.put("myself_map", map);
+		System.out.println(JSONObject.toJSONString(map));
+
+		json结果：{"name":"小黑","myself_map":{"$ref":"@"}}，所以如果出现这样的情况，一般是同一个对象被引用多次导致的，需要重新new 对象然后再将属性一 一set进去才行
+	
 常见的异常和错误：
 
 	1.tomcat启动失败：LifecycleException
@@ -2798,6 +2824,11 @@
 		因为当下载，转发找不到资源时，Tomcat无法响应给浏览器，就相当于访问超时，即无法访问。
 
 	9.读内存比读磁盘效率快
+
+	10.list、set、Map遍历remove问题：
+		遍历时移除一个元素需要使用Iterator.remove()；不能使用List、Set、Map自带的remove(Object)方法。会报迭代器长度改变异常，
+		因为使用集合自带的remove方法不会将迭代器的旧的长度改变，导致原来的迭代器长度与现在的长度不相等，而在遍历调用next()方法时会验证迭代器原来的长度与现在的长度是否先等，
+		不相等则抛出异常。而使用iterator.remove()时会将迭代器旧的长度变量赋值为移除元素后的长度值，所以在next时，验证通过，则不会报错。
 专业术语：
 	oop：面向对象编程
 	aop：spring的面向切面编程，可以看成是方法拦截器
