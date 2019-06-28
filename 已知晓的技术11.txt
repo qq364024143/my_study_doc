@@ -1844,6 +1844,8 @@
 			3.在异常处理类中写异常处理方法，通过@ExceptionHandler(value=XXXException.class)注解在方法上，其中value为要捕获的异常类Class。再使用@ResponseBody注解将异常信息以json格式响应到客户端
 			使用统一异常处理则不需要在代码中try{}catch(Exception e){}。因为需要抛出异常让springboot捕获	
 
+		springboot配置springmvc：创建配置类通过实现WebMvcConfigurer接口
+
 		常用的页面模板：thymeleaf（默认）、valocity、freemark等，一般不使用jsp，因为jsp需要web容器支持，当使用内置tomcat时，需要导入相关包来支持jsp
 		
 		springboot使用web三大组件：
@@ -1887,7 +1889,12 @@
 		回调地址：给其他项目重定向的地址，其他项目在重定向到你给的回调地址时会携带参数，你在你的controller（handler）里得到这些参数即可。
 		回调函数的作用就是获取返回值。比如第三方登陆，第三方支付等都需要回调地址（使用第三方的功能页面时），回调函数这种方式传参可以保证浏览器请求在你的项目中是同一个session。	
 		
-		类似于第三方登陆。			
+		类似于第三方登陆。		
+
+		方案二：使用cookie跨域将登录的token传给访问的服务
+		单点登录就是多个系统共用一个登录系统，关键在于登录后生成的token令牌在其他系统中共享。难点：如何将token传给浏览器，在浏览器访问其他系统时带上此token
+		
+		
 
 	15.JSOUP：Java爬虫
 		获取html，然后使用jsoup解析得到想要的数据
@@ -2428,6 +2435,13 @@
 		将word转为PDF文件：使用aspose，这是一个收费的工具，提供了相关的API来转换文件和操作文档类型doc文件等。
 
 	69. EasyPOI：对POI进行封装的一个操作POI的工具包，使POI操作更简单
+
+	70、openAM：SSO单点登录框架
+
+	71、spring bootAdmin：spring boot监控系统
+		1.创建springbootAdminServer：创建spring boot项目，在启动类添加@EnableSpringbootAdminServer注解
+
+		2、配置客户端：需要被监控的springboot项目
 			
 小知识：
 	
@@ -2796,6 +2810,23 @@
 
 		json结果：{"name":"小黑","myself_map":{"$ref":"@"}}，所以如果出现这样的情况，一般是同一个对象被引用多次导致的，需要重新new 对象然后再将属性一 一set进去才行
 	
+	53、关于请求类型与携带参数类型与服务端接收参数方式对应关系：
+
+		get：
+			参数类型：表单参数form或?param=value   
+			服务端接收参数：springmvc：@RequestParam或直接使用对象（不能使用@RequestBody注解）接收
+		
+		post：
+			application/json：@ReqeustBody
+
+			表单参数form或?param=value ：@RequestParam或直接使用对象（不能使用@RequestBody注解）接收
+		
+	54、请求头、响应头的主要作用：
+		1、携带参数
+		2、告诉服务端、客户端   请求正文、响应正文的类型
+	
+	55、浏览器缓存：当浏览器短时间内请求痛一个url，且携带的参数完全一致时，就会从缓存中取内容，而不会请求服务端	
+	
 常见的异常和错误：
 
 	1.tomcat启动失败：LifecycleException
@@ -3004,5 +3035,7 @@
 	7.方法参数不应超过5个，超过则需要使用实体类封装
 
 	8.JavaBean编写规范：主要是getter/setter方法，因为类的属性只与getter/setter方法有关
+
+	9.接口中的方法不需要用public修饰，因为接口的方法默认是public abstract 的，方法的属性默认是常量 public static final的
 
 	                                                                                                   
