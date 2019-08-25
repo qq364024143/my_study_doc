@@ -2158,6 +2158,30 @@
 	在项目为微服务时，需要将公共的东西使用maven module抽取出来，方便复用（作为jar引入即可），如eurekaclien的RequestMapping接口、实体类等
 
 	36、Netty：网络应用开发框架，可以使用netty开发一个服务器 ，可以看成是java中的net（socket）框架
+		传统IO：ServerSocket.accept();方法是阻塞的，当有请求来时才接收，否则等待。且accept方法是单线程的（在主线程接收请求，然后再开线程去读写请求）
+		while(true){
+			Socket s = serverSocket.accept();
+			//接收请求后开线程处理
+			MyThread t = new MyThread(s);
+			t.start();
+		}
+		当请求并发高时，如果accept()；处理不过来则后面的请求一直处于等待
+
+		而NIO：接收请求和对请求进行读写都是在子线程处理的，即接收请求时不会出现阻塞情况，NIO是基于事件驱动的
+		while(true){
+			Event[] events = takeEvents();//获取事件
+			for(Event e: events){//遍历事件
+				if(e.isAccept()){//接收请求
+					//请求事件处理
+				}else if(e.isReadable()){
+					//读事件处理
+				}else if(e.isWritable()){
+					//写事件处理
+				}
+			}
+		}
+		即每个请求都有单独的线程去接收
+		
 
 	37、freemark：页面模板，类似jsp，可以动态将数据填写到html页面，然后通过相应流写到浏览器，浏览器再解析渲染HTML页面进行展示，形成动态页面。
 		freemark页面静态化：freemark解析模板文件，再把模板文件的表达式替换成对象中的字段值，再把模板文件写到流里面改变模板文件的后缀。页面静态化需要数据变换少的页面
