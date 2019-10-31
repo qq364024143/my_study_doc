@@ -99,7 +99,7 @@
 		多态：父类的引用指向子类的实例，如：一个人（对象）属于人类、也属于动物类。一种包含关系
 		抽象：任何事物都可以抽象成一个类
 	
-		反射、内省(introspect)、泛型:
+		反射reflection、内省(introspect)、泛型:
 			反射：Class类，Class clazz = Class.forName("类全路径");//或者 obj.getClass();//或者MyClass.class;
 			泛型：T/?/E，定义时泛指，使用时确定类型
 				public class<T>{}
