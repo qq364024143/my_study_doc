@@ -2132,7 +2132,8 @@
 			broker：集群的某个服务
 			topic：主题（某个队列）
 			分区（partition）：一个topic下有多个分区，消息就放在这些分区中（一个分区满了就放在下一个分区），当消费者消费消息时需要用到topic、partition、groupid和 offset
-			leader：主分区，follower：副分区，做备份用的
+			replication：partition的副本，一个topic下有多个partition，这些partition在每个服务器上都会复制一份，实现集群。一个服务器上只有一份partition。这样有一台服务器挂了，将会重新选举另一台服务器作为leader，生产消费都由leader进行
+			leader：主服务器，follower：备用服务器，当leader挂了则会在follower中选举一个leader,保证高可用。
 			offset：记录了一个消费者的消费数，下次从哪开始消费
 			ack：ack容错机制(应答机制），当生产者发送消息时，服务端的topic的分区和副本都收到 后会通过 回调函数返回确认是否发送成功
 
