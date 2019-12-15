@@ -1161,7 +1161,7 @@
 	在mybatis的基础上的增强版mybatis-plus：与hibernate一样的orm。 实体类继承EntityWraper
 	不需要写sql，通过mybatis-plus自带的方法可以对数据库进行简单的操作（单表增删改查）
 
-	mybatis中获取入参值的2中方法：
+	mybatis中获取入参值的2中方法：一般在取值时指定数据库表字段类型 #{xxx,jdbcType=VARCHAR}
 		1.#{field}
 			这种取值方式使sql是预处理形式，可以防止sql注入的风险，PreparedStatement
 		2.${field}：为防止sql注入风险，一般不用此方式取值
@@ -1169,7 +1169,7 @@
 		mapper.xml中的parameterType：mapper(dao)接口的入参是什么类型就填什么类型List：java.utl.List;Map:java.util.Map; int :int；
 		resultType：返回值是List则为List里面存的类型，mybatis会根据查询出的结果集去循环封装
 
-		当dao层方法中有 多个相同 类型的参数时取值为   可以使用#{0}   #{1} 也可以使用@Param("param1")绑定参数然后使用#{param1}，且属性parameterType不要写
+		当dao层方法中有 多个参数时取值为   可以使用#{0}   #{1} 也可以使用@Param("param1")绑定参数然后使用#{param1}，且属性parameterType不要写
 		
 		mybatis的select标签必须有resultType或resultMap，而parameterType属性可有可无，尤其是有多个参数时可以使用#{0},#{1},#{2}或@Param(“param1”)来绑定获取参数
 		
@@ -1447,6 +1447,7 @@
 		distinct():去重，只有当查出来的两条数据的所有字段都相同时才有效，也可以使用group by 进行去重
 		case when msex='1' then '男' when msex='0' then '女' else '人妖' end  ; 注意使用case when 时结尾 必须使用“end”结束   如果只有一种情况也可以使用if()函数，if(name='aa',1,0)  如果name='aa'则1否则为0
 		case when...then ... when ...then .... else ... end
+		if(boolean,trueValue,falseValue)
 		exists()
 		union(自动去重)/union all（不去重，但效率较高）
 		-------------分组，分类型求和----------------------------
@@ -1469,8 +1470,8 @@
 		SELECT id,'sex'key,SEX value  FROM TABLE
 		使用union all将结果集连接，有多少列就union all多少次
 
-	6.存储过程（procedure）、触发器（trigger）、自定义函数（function）、视图(View)
-		1.存储过程：
+	6.存储过程（procedure）、触发器（trigger）、自定义函数（function）、视图(View)、匿名（存储）块
+		1.存储过程：存储在数据库服务端，只有在创建时才校验，编译。后续使用时直接使用，不需要再校验语法与编译
 		create procedure my pro(name in varchar2(10),age out int(2))as
 		declare myname varchar2(2);
 		begin
@@ -1505,11 +1506,19 @@
 
 		END 
 
-		4.视图View：多张表查询组成的一张新表
+		4.视图View：将一个查询语句sql存储为视图，每次查视图时其实就是执行查询语句sql，视图就是为了简化查询sql
 
 		CREATE VIEW StudentView（Sno，Sname，Ssex，Sage，Sdept）AS SELECT SX.Sno，SX.Sname，SY.Ssex，SX.Sage，SY.Sdept FROM SX，SY WHERE SX.Sno=SY.Sno；
 		
 		使用视图：select * from StudentView where sno='1'
+		
+		5.匿名（存储）块,相当于sql，只是可以在sql中写逻辑
+		declare
+		 mydict varchar2(100);
+		 begin
+		 select myname into mydict from tablename;
+		 update tablename set myname=mydict where userid='111';
+		 end;
 
 	7.数据库相关扩展
 		1.查询数据库表的结构（MySql）information_schema是数据库名，是一个mysql自带的系统数据库，存储了一些表，而这些表是用来记录我们自定义数据库中的表的
@@ -1678,7 +1687,8 @@
 		
 		隔离级别越高，越能保证数据的完整性和一致性，但是对并发性能的影响也越大。mysql默认是可重复读
 			
- 
+		在写sql时可以针对某个sql进行事务隔离级别的设置，比如：
+			select * from tablename for update;  -- 表示行锁，即线程1（事务1）执行此sql，其他线程（事务）必须等线程1提交完成或回滚后才能读取数据，否则一直等待，当然可以设置等待时间，避免脏读。
 		
 扩展技术：
 
@@ -2537,7 +2547,7 @@
 		使用Actuator Endpoints来监控应用：使用uri：/health、/info等访问actuator查看服务信息，http://localhost:8080/actuator/info
 
 	74、canal：阿里开源的mysql日志监听中间件，可以获取mysql操作（insert、update、delete事务事件）的日志。mysql日志叫binlog，用于记录用户对数据库更新的SQL语句信息。
-		一般与kafka一起使用：canal将日志信息通过kafka发送到队列 中，kafka消费端取出消息做业务处理
+		一般与kafka一起使用：canal将日志信息通过kafka发送到队列中，kafka消费端取出消息做业务处理
 
 	75.分布式事务的实现：1、使用消息队列保证最终一致性。2、使用seata分布式框架
 		一般做法是使事务达到最终一致性：不管中途发生什么，但是最终到数据库的结果是一致的就行。
@@ -2976,6 +2986,9 @@
 		遍历时移除一个元素需要使用Iterator.remove()；不能使用List、Set、Map自带的remove(Object)方法。会报迭代器长度改变异常，
 		因为使用集合自带的remove方法不会将迭代器的旧的长度改变，导致原来的迭代器长度与现在的长度不相等，而在遍历调用next()方法时会验证迭代器原来的长度与现在的长度是否先等，
 		不相等则抛出异常。而使用iterator.remove()时会将迭代器旧的长度变量赋值为移除元素后的长度值，所以在next时，验证通过，则不会报错。
+		
+	11.spring boot项目使用 java -jar xxx.jar --server.port=999 启动时可以给系统传参数，其中 --k=v就是参数，可在项目任意地方使用System.getProperty("k");获取到值
+	
 专业术语：
 	oop：面向对象编程
 	aop：spring的面向切面编程，可以看成是方法拦截器
@@ -3172,6 +3185,8 @@
 		m.put("k","v");//实参m还是null，报空指针异常
 	}	    
 	private void initMap(Map m){   // 进入方法，形参m——>实参所指向的对象null，这就是为什么可以对对象类型的属性set值的原因，因为形参与实参所指向的对象是同一个
+		// m=实参;
+		// ...其他操作，如果像下面这样又new一个对象，则 m=新对象，后续操作的都是这个新对象，而实参则一直不变。
 		m = new HashMap<String,Object>();  // 形参m指向 新new的Map对象
 	}// 形参m所指向的新new的Map对象未被引用，会被回收释放内存。
 	
