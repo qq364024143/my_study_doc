@@ -2573,6 +2573,42 @@
 　　		3、List预定义：事先定于好。
 		分库分表除了sharingjdbc还可以使用AbstractRoutingDataSource多数据源切换，根据数据类型不同选择不同库存储
 
+		
+	77、OkHttp ：高效的http请求客户端
+			能够高效的执行 http，数据加载速度更快，更省流量
+			支持 GZIP 压缩，提升速度，节省流量
+			缓存响应数据，避免了重复的网络请求
+			使用简单，支持同步阻塞调用和带回调的异步调用
+			
+	78、airflow：分布式任务调度工具：类似于工作流引擎。用于有流程依赖的任务调度，周期执行：task1->task2->task3。
+	
+	
+	79、groovy：一门语言、与Java一样在JVM中运行，但是语法有些不同，Java可以直接使用groovy代码，调用其方法，相当于也属于Java语言。java开发者可以无缝的进行groovy开发，甚至直接将java代码拷贝到groovy就能够运行
+				groovy是一个动态语言，groovy支持直接读取String进行运行，及将字符串的形式编译成可运行代码，在Java中可以通过groovy实现动态代码
+				例：
+				import org.codehaus.groovy.runtime.InvokerHelper
+
+				class a{
+					static void main(String[] args) {
+						GroovyClassLoader classLoader = new GroovyClassLoader()
+						Class<?> ruleClazz = classLoader.parseClass(
+								"def b(){ println \"I am grovy script b\" }\n" +
+										"void c(){println \"I am grovy script c\"}\n" +
+										"private d(){println \"I am grovy script d\"}\n" +
+										"def e(int param = 1000){println \"I am grovy script e param default value is \"+param}\n" +
+										"String f(){return \"return from method\"}"
+						)
+						Script script = InvokerHelper.createScript(ruleClazz, new Binding())
+						script.invokeMethod("b",null)// 运行方法b
+						script.invokeMethod("c",null) // 运行方法c
+						script.invokeMethod("d",null)
+						script.invokeMethod("e",null)
+						println script.invokeMethod("f",null)
+					}
+				}
+
+
+	
 小知识：
 	
 	tomcat关键目录结构
