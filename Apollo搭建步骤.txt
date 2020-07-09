@@ -1,0 +1,29 @@
+
+1、下载Apollo：https://github.com/ctripcorp/apollo
+主要三个项目：
+	1、apollo-configservice --配置中心和注册中心
+	2、apollo-adminservice --页面端服务
+	3、apollo-portal --前端页面
+
+
+准备工作：建数据库
+	找到scripts/sql文件夹下的apolloconfigdb.sql和apolloportaldb.sql，到数据库运行即可
+
+开始构建：
+	找到scripts文件夹，下面有build.bat和build.sh，build.bat是windows命令build.sh是Linux命令
+
+以Windows为例：
+1、右键编辑build.bat，修改build.bat文件内容，将准备好的数据库信息填入
+
+2、运行build.bat命令开始构建项目
+
+3、构建完成后在apollo-master对应项目中找到target文件夹下的xxx-github.zip压缩文件
+
+4、解压xxx-github.zip文件得到xxx.jar
+
+5、运行jar包：java -jar xxx.jar即可
+
+
+如需修改端口号则先在对应项目中修改然后再构建，注意需要修改数据库apolloconfigdb表serverconfig中的eurekaurl的端口号
+
+问题：apollo-configservice运行时报 Cannot execute request on any known server错误是没问题的，因为apollo-configservice既是eureka客户端又是注册中心，在作为客户端注册到注册中心时，因为注册中心启动顺序比客户端慢导致的，后续重试时即可注册成功
