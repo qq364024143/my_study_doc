@@ -171,6 +171,16 @@
 			char：（空字符 \u0000）
 			boolean：false
 			Object：null	这里代表所有引用类型（对象类型）
+			
+			基本类型对应的包装类属于对象类型，不能通过==比较值的大小，需要转化为基本类型再作比较：
+				Long a = 12L;
+				Long b = 10L;
+				
+				
+				boolean c = a.longValue()==b.longValue();
+				
+				通过mybatis查出来的都是直接new的，所以不会从常量池中获取
+				
 
 		局部变量是没有默认值的，所以在定义时必须要赋一个默认值进行初始化，否则报错
 
@@ -1160,6 +1170,7 @@
 
 	在mybatis的基础上的增强版mybatis-plus：与hibernate一样的orm。 实体类继承EntityWraper
 	不需要写sql，通过mybatis-plus自带的方法可以对数据库进行简单的操作（单表增删改查）
+	
 
 	mybatis中获取入参值的2中方法：一般在取值时指定数据库表字段类型 #{xxx,jdbcType=VARCHAR}
 		1.#{field}
@@ -1226,6 +1237,35 @@
 			
 			mybatis也可以执行ddl语句：如create table tablename(  字段名  类型  约束 ,字段名  类型  约束);   所以 使用Java代码就可以创建表
 
+			
+		mybatis-plus：mybatis增强版，能快速实现单表的增删改查不需要写配置文件。
+				用法：
+				1、dao层写Mapper接口继承BaseMapper<XXVO>接口即可
+				2、实体类：继承Model<XXXVO>抽象类，重写getPk()方法，返回主键字段。通过@TableName("tableName")绑定表，属性上使用@TableId("")标识主键字段，@TableField("")属性与其他字段绑定
+				3、通过mapper调对应方法查询数据，通过 mapper.selectList(new EntityWrapper().eq().and().....); 自定义条件查询
+				
+		
+			@TableName("xxxtable")
+			public class XXVO extends Model<XXVO>{
+				
+				@TableId("pid")
+				private String myId;
+				
+				@TableField("name")
+				private String name;
+				
+				// ... getter/setter省略
+				
+				public Object getPk(){
+					renturn this.myId;
+				}
+			}
+			// dao接口
+			@Mapper
+			public interface XXMapper extends BaseMapper<XXVO>{
+			
+			}
+		
 
 	spring的bean由spring创建。springmvc的bean由springmvc创建。spring与springmvc是两个不同的容器，所以相关的配置需要具体到对应的配置文件中
 	如springmvc.xml中需要配<context:component-scanner base-package="com.hgx.*.controller"/>来扫描controller层的@RequestMapping注解创建handlerMapping，否则无法创建handler（@RequestMapping("/xx")）报错:not find handler method for [/product/getProduct]
@@ -1938,6 +1978,20 @@
 	
 		常用注解：除了spring有的注解外，还有@SpringBootApplication、@ImportResource（导入spring.xml）、@PropertySource（导入.properties配置文件）、@Configuration、@Bean、@ConfigurationProperties（读取application.properties的属性注入到实体类中）
 
+		
+		springboot参数：
+		
+			
+			在使用jar启动时可以动态添加一些参数：
+				java - jar xxx.jar --name=张三
+				-- k=v  相当于在项目中application.properties里面添加配置参数 
+				java -jar -D age=19 xxx.jar
+				-D 添加系统参数 相当于在项目里面System.setProperty("key","value");
+				java -jar xxx.jar xxxx
+				xxxvalue  spring boot常量参数
+
+			
+		
 	13.activiti(工作流)23张表
 		每个节点执行一段代码，节点自动执行。
 		7个服务对象操作工作流（增删改查）
@@ -2552,7 +2606,37 @@
 			
 	72、携程Apollo：统一配置中心，类似于springcloud config组件
 		Apollo（阿波罗）是携程框架部门研发的开源配置管理中心，能够集中化管理应用不同环境、不同集群的配置，配置修改后能够实时推送到应用端，并且具备规范的权限、流程治理等特性。
-		基于mysql数据库，将配置信息存储到数据库
+		基于mysql数据库，将配置信息存储到数据库，再通过定时器轮询推送到对应服务
+			阿波罗搭建步骤：
+			1、下载Apollo：https://github.com/ctripcorp/apollo
+			主要三个项目：
+				1、apollo-configservice --配置中心和注册中心
+				2、apollo-adminservice --页面端服务
+				3、apollo-portal --前端页面
+			
+			
+			准备工作：建数据库
+				找到scripts/sql文件夹下的apolloconfigdb.sql和apolloportaldb.sql，到数据库运行即可
+			
+			开始构建：
+				找到scripts文件夹，下面有build.bat和build.sh，build.bat是windows命令build.sh是Linux命令
+			
+			以Windows为例：
+			1、右键编辑build.bat，修改build.bat文件内容，将准备好的数据库信息填入
+			
+			2、运行build.bat命令开始构建项目
+			
+			3、构建完成后在apollo-master对应项目中找到target文件夹下的xxx-github.zip压缩文件
+			
+			4、解压xxx-github.zip文件得到xxx.jar
+			
+			5、运行jar包：java -jar xxx.jar即可
+			
+			
+			如需修改端口号则先在对应项目中修改然后再构建，注意需要修改数据库apolloconfigdb表serverconfig中的eurekaurl的端口号
+			
+			问题：apollo-configservice运行时报 Cannot execute request on any known server错误是没问题的，因为apollo-configservice既是eureka客户端又是注册中心，在作为客户端注册到注册中心时，因为注册中心启动顺序比客户端慢导致的，后续重试时即可注册成功
+					
 
 	73、spring boot actuator：服务信息，健康检查、审计、统计和HTTP追踪
 		使用Actuator Endpoints来监控应用：使用uri：/health、/info等访问actuator查看服务信息，http://localhost:8080/actuator/info
@@ -2607,7 +2691,22 @@
 					}
 				}
 
+				
+	80、data-source-spring-boot-starter组件：
+		多数据源配置组件，只需要在application.properties里面配置多个数据源即可，不需要再手动配置多个数据源了
+		通过在类上或方法上使用@DS("dsName")指定数据源，@DS 可以注解在方法上和类上，同时存在方法注解优先于类上注解，注解在service实现或mapper接口方法上，但强烈不建议同时在service和mapper注解。 (可能会有问题)
+		@DS("")：如果不使用注解或者使用注解，但是名称在所有数据源中不存在则使用默认数据源
+		
+		注意：
+			 涉及多数据源操作时，
 
+		1.不能使用事务，否则数据源不会切换，使用的还是是第一次加载的数据源 ----------->>
+
+　　	删除 操作多数据源的方法或者类、接口 上的 注解 @Transactional(rollbackFor = Exception.class) 即可。
+
+		2.第一次加载的数据源之后，第二次（第三次...）操作其它数据源，如果数据源不存在，使用的还是第一次加载的数据源
+		
+		3.使用mybatis-plus时不能使用 继承BaseMapper<>方式写dao层，必须使用Mapper.xml方式配置，否则@DS切换数据源无效
 	
 小知识：
 	
@@ -2992,6 +3091,9 @@
 		2、告诉服务端、客户端   请求正文、响应正文的类型
 	
 	55、浏览器缓存：当浏览器短时间内请求同一个url，且携带的参数完全一致时，就会从缓存中取内容，而不会请求服务端
+	
+	56、httpServletRequest只能读取一次流里面的数据：
+			request.getInputStream();//读取一次数据后下次再读取此request的InputStream里面的数据得到的是空的
 
 
 分布式：
