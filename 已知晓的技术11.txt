@@ -1057,6 +1057,32 @@
 				EnHancer(增强类) MethodInterceptor方法拦截器
 				1.创建增强类对象，指定父类（目标类）
 				2.给增强对象设置方法拦截器
+				
+			@Transactional无效问题：
+				在类ServiceA中有2个方法：createAll、createUser，其中createUser添加事务注解，createAll没有事务注解，而controller层通过注入serviceA对象调用createAll()，这样其实事务是不生效的
+				原因：spring事务是通过代理来创建事务的，createAll方法调用createUser方法时使用的是当前类的对象this,而不是代理对象，所以spring无法代理createUser方法开启事务，注解不生效
+				@Service
+				public class ServiceA{
+					
+					public boolean createAll(){
+						
+						createUser(); // 同类中方法互相调用本质是this.createUser();   this代表当前类的对象，而不是代理对象，所以事务不起作用，只有通过spring的代理对象调用才能够被代理。
+						// 改成通过applicationContext.getBean("serviceA").createUser();
+					}
+					
+					@Transactional
+					public boolean createUser(){
+						dao.insertUser();
+					}
+				}
+				解决方法：	通过获取spring的代理对象来调用有事务注解的方法
+					方法1、通过applicationContext.getBean("serviceA").createUser();
+					方法2、((ServiceA)AopContext.currentProxy()).createUser();
+					方法3、将@Transactional放到createAll()方法上
+					就一个目的，使用spring的代理对象来直接调用有事务注解的方法
+					
+				注意：不仅是事务@Transactional需要注意，所有利用spring代理来实现的功能都需要用spring的代理对象直接调用才能生效，如：@Async:异步，即创建一个线程；@Schedule：任务调度，即定时任务都是使用代理来实现的，所以都需要注意spring代理对象
+				总之一句话，spring代理不生效，要检查调用方法的对象是不是spring代理对象。
 
 		@Bean 方法级别注解，将返回的bean交给spring管理
 
