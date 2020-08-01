@@ -1766,6 +1766,9 @@
 				只有当前事务能增删改查，其他事务查都不能查。用于并发时减少库存等操作：先查库存，判断库存是否足够，再修改库存
 				
 			两个锁都是将满足条件的数据加锁（where 条件）。
+			
+		
+		使用数据库实现分布式锁：利用唯一索引，同一个操作中，在进入方法时先insert同一个值，之后判断只有insert成功的才能继续执行，insert失败的表示获取锁失败。当操作执行完成后删除insert的记录。
 		
 扩展技术：
 
@@ -2289,7 +2292,7 @@
 					eurekaClient集群：@EnableEurekaClient
 						服务名相同，注册中心配置时多个使用,隔开
 
-				ribbon：客户端负载均衡（客户端发现调用服务），在入口类中添加@EnableEurekaClient注解(以为ribbon都是使用在服务消费方的)，将服务注册到注册中心，再配置restTemplate到spring容器中   
+				ribbon：客户端负载均衡（客户端发现调用服务），在入口类中添加@EnableEurekaClient注解(以为ribbon都是使用在服务消费方的)，将服务注册到注册中心（将ip,端口号信息存到注册中心进行管理，用于负载均衡时查询到对应应用的所有ip+端口号），再配置restTemplate到spring容器中   
 					new RestTemplate();来调用服务（RestTemplate是对HttpUrlConnection的封装，因为spring cloud暴露服务是通过http请求调用服务的）
 					@Bean
 					@LoadBalanced
@@ -2301,6 +2304,8 @@
 					使用了feign可以不使用ribbon和hystrix	
 					使用@RequestBody时，只能使用POST请求，且@RequestBody和@RequestParam不能被继承，也就是说不能写到父类上				
 
+					ribbon和feign实现负载均衡都是先从注册中心通过实例名查询到对应的所有ip和端口，再进行负载均衡策略（从查询出的ip中随机或顺序等策略取到ip），再使用httpClient进行http请求实现服务调用。
+					
 				hystrix：断路器，负责监控服务之间的调用情况，连续多次失败进行熔断保护。当服务之间调用失败 则断路，直接返回调用失败，不再请求服务，过一段时间会重新调用一次看是否能调通
 				zuul：网关路由，用来 路由 哪些请求分配给哪个服务和过滤请求（通过extends ZuulFilter实现配置。接口安全token认证，IP限制等）,入口类上的注解为@EnableZuulProxy，类比nginx，要使用zuul则feignclient需要访问的时候需要访问zuul的域名
 				config：配置中心，利用git集中管理程序的配置，远程获取配置文件。 @EnableConfigServer 为服务端。  已注册到注册中心的客户端（其他微服务中）直接获取配置文件的值，config可以动态获取配置文件的值@RefreshScope刷新 ，@Value("${name}")取值
