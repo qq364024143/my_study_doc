@@ -27,3 +27,8 @@
 如需修改端口号则先在对应项目中修改然后再构建，注意需要修改数据库apolloconfigdb表serverconfig中的eurekaurl的端口号
 
 问题：apollo-configservice运行时报 Cannot execute request on any known server错误是没问题的，因为apollo-configservice既是eureka客户端又是注册中心，在作为客户端注册到注册中心时，因为注册中心启动顺序比客户端慢导致的，后续重试时即可注册成功
+
+
+Apollo原理：
+
+	apollo-portal：页面操作提交发布配置——>apollo-adminservice操作数据库——>apollo-configservice定时扫描releaseMessage表获取发布配置——长连接，通知客户端——>apollo-client获取配置，通过applicationContext将配置更新到spring应用中心
